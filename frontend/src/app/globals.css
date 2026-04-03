@@ -98,3 +98,56 @@ body {
   background: var(--color-border);
   border-radius: 3px;
 }
+
+/* ── Thinking Trace ── */
+
+.trace-panel-closed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.trace-panel-open {
+  max-height: 5000px;
+  opacity: 1;
+}
+
+.trace-timeline-line {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 1.5px;
+  background: linear-gradient(
+    180deg,
+    var(--color-teal) 0%,
+    var(--color-border) 50%,
+    var(--color-coral) 100%
+  );
+  border-radius: 1px;
+}
+
+.trace-step {
+  transition: background-color 0.15s ease;
+}
+
+.trace-step:hover {
+  background-color: rgba(0, 166, 153, 0.03);
+  border-radius: 6px;
+}
+
+.trace-code-block {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font-family: var(--font-geist-mono), 'JetBrains Mono', monospace;
+  tab-size: 2;
+}
+
+.trace-output-block {
+  background: var(--color-surface-alt);
+  color: var(--color-navy);
+  border: 1px solid var(--color-border);
+}
+
+.trace-toggle:hover svg {
+  color: var(--color-teal);
+}

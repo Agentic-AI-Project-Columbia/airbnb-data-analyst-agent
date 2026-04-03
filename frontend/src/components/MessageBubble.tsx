@@ -2,6 +2,19 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import ThinkingTrace from "./ThinkingTrace";
+
+export type TraceStep = {
+  type: "agent_start" | "handoff" | "tool_call" | "tool_output" | "message";
+  agent?: string;
+  source?: string;
+  target?: string;
+  tool?: string;
+  input?: string;
+  output?: string;
+  content?: string;
+  ts: number;
+};
 
 export type Message = {
   id: string;
@@ -9,6 +22,7 @@ export type Message = {
   content: string;
   artifacts?: string[];
   agent?: string;
+  trace?: TraceStep[];
 };
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -70,6 +84,10 @@ export default function MessageBubble({ message }: { message: Message }) {
               </div>
             ))}
           </div>
+        )}
+
+        {message.trace && message.trace.length > 0 && (
+          <ThinkingTrace steps={message.trace} />
         )}
       </div>
     </div>

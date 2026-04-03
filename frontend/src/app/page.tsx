@@ -3,7 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Header from "@/components/Header";
 import ChatInput from "@/components/ChatInput";
-import MessageBubble, { type Message } from "@/components/MessageBubble";
+import MessageBubble, {
+  type Message,
+  type TraceStep,
+} from "@/components/MessageBubble";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -21,8 +24,53 @@ export default function Home() {
     setMessages((prev) => [...prev, msg]);
   }, []);
 
+  const buildFallbackTrace = useCallback(
+    (question: string, answer: string, startedAt: number): TraceStep[] => {
+      const finishedAt = Date.now() / 1000;
+
+      return [
+        {
+          type: "agent_start",
+          agent: "Orchestrator",
+          ts: startedAt,
+        },
+        {
+          type: "message",
+          agent: "Orchestrator",
+          content: `Submitted your question to the analysis pipeline: "${question}"`,
+          ts: startedAt + 0.001,
+        },
+        {
+          type: "message",
+          agent: "Orchestrator",
+          content:
+            "The backend returned a final answer, but it did not include a detailed agent trace for this run.",
+          ts: finishedAt,
+        },
+        {
+          type: "message",
+          agent: "Orchestrator",
+          content: answer,
+          ts: finishedAt + 0.001,
+        },
+      ];
+    },
+    []
+  );
+
   const handleSend = useCallback(
     async (question: string) => {
+      const startedAt = Date.now() / 1000;
+      const history = messages
+        .filter(
+          (message) =>
+            message.role === "user" || message.role === "assistant"
+        )
+        .map((message) => ({
+          role: message.role,
+          content: message.content,
+        }));
+
       const userMsg: Message = {
         id: Date.now().toString(),
         role: "user",
@@ -43,7 +91,7 @@ export default function Home() {
         const res = await fetch(`${BACKEND_URL}/api/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, history }),
         });
 
         setMessages((prev) => prev.filter((m) => m.role !== "status"));
@@ -59,13 +107,19 @@ export default function Home() {
         }
 
         const data = await res.json();
+        const trace =
+          Array.isArray(data.trace) && data.trace.length > 0
+            ? data.trace
+            : buildFallbackTrace(question, data.answer, startedAt);
+
         addMessage({
           id: (Date.now() + 2).toString(),
           role: "assistant",
           content: data.answer,
           artifacts: data.artifacts,
+          trace,
         });
-      } catch (err) {
+      } catch {
         setMessages((prev) => prev.filter((m) => m.role !== "status"));
         addMessage({
           id: (Date.now() + 2).toString(),
@@ -76,7 +130,7 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [addMessage]
+    [addMessage, buildFallbackTrace, messages]
   );
 
   return (

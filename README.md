@@ -76,7 +76,7 @@ The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded 
 
 | Requirement | Implementation |
 |-------------|---------------|
-| **Frontend** | Next.js 16 app in `frontend/` — chat interface with message rendering, markdown support, inline chart display |
+| **Frontend** | Next.js 16 app in `frontend/` — chat interface with markdown answers, inline chart display, and an expandable `Agent Thinking` trace panel |
 | **Agent Framework** | OpenAI Agents SDK (`openai-agents` package) — `Agent`, `function_tool`, `Runner.run()`, `handoffs` |
 | **Tool Calling** | `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (Python charts) |
 | **Non-trivial Dataset** | NYC Airbnb data from Inside Airbnb: 13M+ calendar rows, 36K listings, 1M+ reviews |
@@ -109,6 +109,15 @@ The Hypothesis Generator writes matplotlib/seaborn code that saves charts as PNG
 
 Pydantic models define structured schemas for query results and EDA findings, ensuring reliable data flow between agents.
 
+### 4. Agent Thinking Trace
+
+| Where | `frontend/src/components/ThinkingTrace.tsx` + `backend/main.py` |
+|-------|----------------------------------------------------------------|
+
+Each assistant answer can expose an expandable `Agent Thinking` panel beneath the response. When available, the backend returns a step-by-step trace of agent handoffs, tool calls, tool outputs, and intermediate messages. The frontend renders that trace as a collapsible timeline so you can inspect what happened under the hood for a given answer.
+
+If a backend response does not include detailed trace data, the frontend falls back to a compact orchestration summary so the disclosure still explains how the answer was produced.
+
 ---
 
 ## Quick Start
@@ -117,7 +126,7 @@ Pydantic models define structured schemas for query results and EDA findings, en
 
 - Python 3.12+
 - Node.js 20+
-- An OpenAI API key
+- Either an OpenAI API key or an OpenRouter API key
 
 ### Local Development
 
@@ -128,7 +137,9 @@ cd airbnb
 # 2. Backend setup
 cd backend
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and add either OPENAI_API_KEY or OPENROUTER_API_KEY
+# Optional: set AGENT_MODEL if you want to override the default model
+# Defaults to gpt-4.1 (and uses the OpenAI-compatible provider path for OpenRouter)
 pip install -r requirements.txt
 python main.py
 # Backend runs at http://localhost:8000
@@ -143,8 +154,10 @@ npm run dev
 ### Docker
 
 ```bash
-# Set your API key
+# Set one API key
 export OPENAI_API_KEY=sk-...
+# or
+export OPENROUTER_API_KEY=sk-or-...
 
 # Build and run
 docker-compose up --build
@@ -204,7 +217,8 @@ airbnb/
 │   │   └── components/
 │   │       ├── Header.tsx         # App header
 │   │       ├── ChatInput.tsx      # Input with suggested questions
-│   │       └── MessageBubble.tsx  # Message renderer (markdown, tables, charts)
+│   │       ├── MessageBubble.tsx  # Message renderer (markdown, charts, trace toggle)
+│   │       └── ThinkingTrace.tsx  # Expandable agent execution timeline
 │   ├── next.config.ts
 │   ├── Dockerfile
 │   └── package.json
