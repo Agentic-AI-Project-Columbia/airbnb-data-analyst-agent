@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --color-coral: #FF5A5F;
+  --color-coral-dark: #E04850;
+  --color-coral-light: #FF787D;
+  --color-teal: #00A699;
+  --color-teal-dark: #008F84;
+  --color-navy: #484848;
+  --color-gray-warm: #767676;
+  --color-cream: #FFF8F0;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F7F7F7;
+  --color-border: #EBEBEB;
+}
+
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  src: url('https://fonts.cdnfonts.com/css/cabinet-grotesk');
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-navy);
+}
+
+.gradient-coral {
+  background: linear-gradient(135deg, var(--color-coral) 0%, var(--color-coral-dark) 100%);
+}
+
+.pattern-dots {
+  background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.thinking-dots span {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.prose-chat {
+  line-height: 1.7;
+}
+
+.prose-chat p { margin-bottom: 0.75em; }
+.prose-chat ul, .prose-chat ol { margin: 0.5em 0; padding-left: 1.5em; }
+.prose-chat li { margin-bottom: 0.25em; }
+.prose-chat strong { font-weight: 600; color: var(--color-navy); }
+.prose-chat code {
+  background: var(--color-surface-alt);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: var(--font-geist-mono);
+}
+.prose-chat pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  font-size: 0.875em;
+}
+.prose-chat th, .prose-chat td {
+  border: 1px solid var(--color-border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose-chat th {
+  background: var(--color-surface-alt);
+  font-weight: 600;
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 6px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
