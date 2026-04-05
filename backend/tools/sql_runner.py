@@ -17,11 +17,7 @@ def _get_connection() -> duckdb.DuckDBPyConnection:
 
     _con = duckdb.connect(database=":memory:")
 
-    _register_view(_con, "calendar", "calendar.csv")
     _register_view(_con, "listings", "listings.csv")
-    _register_view(_con, "listings_summary", "listings_summary.csv")
-    _register_view(_con, "reviews", "reviews.csv")
-    _register_view(_con, "reviews_summary", "reviews_summary.csv")
     _register_view(_con, "neighbourhoods", "neighbourhoods.csv")
 
     return _con

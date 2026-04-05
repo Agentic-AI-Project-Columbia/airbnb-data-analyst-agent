@@ -10,16 +10,28 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from agents import ItemHelpers, MultiProvider, RunConfig, set_tracing_disabled
+from openai import AsyncOpenAI
+
+from agents import (
+    ItemHelpers,
+    MultiProvider,
+    RunConfig,
+    set_default_openai_client,
+    set_tracing_disabled,
+)
 
 openrouter_key = os.environ.get("OPENROUTER_API_KEY")
 openai_key = os.environ.get("OPENAI_API_KEY")
 
 if openrouter_key:
+    openrouter_client = AsyncOpenAI(
+        api_key=openrouter_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
+    set_default_openai_client(openrouter_client, use_for_tracing=False)
     OPENROUTER_RUN_CONFIG = RunConfig(
         model_provider=MultiProvider(
-            openai_base_url="https://openrouter.ai/api/v1",
-            openai_api_key=openrouter_key,
+            openai_client=openrouter_client,
             openai_prefix_mode="model_id",
             unknown_prefix_mode="model_id",
         )

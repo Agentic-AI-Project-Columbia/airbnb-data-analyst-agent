@@ -42,13 +42,10 @@ Four agents, three tools, one pipeline.
 | Tool | `backend/tools/sql_runner.py` → `run_sql()` |
 | Data Engine | DuckDB (in-memory, reads `.csv` and `.csv.gz` natively) |
 
-The **Data Collector** agent translates the user's question into one or more DuckDB SQL queries at runtime. It queries five registered views:
+The **Data Collector** agent translates the user's question into one or more DuckDB SQL queries at runtime. It currently queries two registered views:
 
-- **calendar** — 13.3M rows of daily availability and pricing
-- **listings** — 36,445 listings with 85 columns (host, location, pricing, reviews, amenities)
-- **listings_summary** — compact 19-column listing view
-- **reviews** — 1M+ reviews with dates spanning 2009–2026
-- **neighbourhoods** — NYC neighbourhood names and groupings
+- **listings** — about 37K listings with rich listing-level fields such as host metadata, location, property details, room type, price, amenities, availability fields, and review score columns
+- **neighbourhoods** — NYC neighbourhood names and borough groupings
 
 The agent writes dynamic SQL with aggregations, filters, and joins tailored to each question. Results are returned as JSON.
 
@@ -79,7 +76,7 @@ The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded 
 | **Frontend** | Next.js 16 app in `frontend/` — chat interface with markdown answers, inline chart display, and an expandable `Agent Thinking` trace panel |
 | **Agent Framework** | OpenAI Agents SDK (`openai-agents` package) — `Agent`, `function_tool`, `Runner.run()`, `handoffs` |
 | **Tool Calling** | `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (Python charts) |
-| **Non-trivial Dataset** | NYC Airbnb data from Inside Airbnb: 13M+ calendar rows, 36K listings, 1M+ reviews |
+| **Non-trivial Dataset** | NYC Airbnb data from Inside Airbnb: a detailed listings table plus neighbourhood reference data |
 | **Multi-agent Pattern** | Orchestrator-handoff: `orchestrator_agent` hands off sequentially to `collector_agent` → `analyst_agent` → `hypothesizer_agent` (see `backend/agent_defs/orchestrator.py`) |
 | **Deployed** | GCP Cloud Run (Docker containers for backend + frontend) |
 | **README** | This file |
@@ -124,7 +121,7 @@ If a backend response does not include detailed trace data, the frontend falls b
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.11+
 - Node.js 20+
 - Either an OpenAI API key or an OpenRouter API key
 
@@ -140,8 +137,8 @@ cp .env.example .env
 # Edit .env and add either OPENAI_API_KEY or OPENROUTER_API_KEY
 # Optional: set AGENT_MODEL if you want to override the default model
 # Defaults to gpt-4.1 (and uses the OpenAI-compatible provider path for OpenRouter)
-pip install -r requirements.txt
-python main.py
+uv sync
+uv run python main.py
 # Backend runs at http://localhost:8000
 
 # 3. Frontend setup (new terminal)
@@ -205,7 +202,8 @@ airbnb/
 │   ├── models/
 │   │   └── schemas.py             # Pydantic structured output models
 │   ├── artifacts/                 # Generated charts and outputs (runtime)
-│   ├── requirements.txt
+│   ├── pyproject.toml
+│   ├── uv.lock
 │   ├── Dockerfile
 │   └── .env.example
 ├── frontend/
@@ -222,13 +220,11 @@ airbnb/
 │   ├── next.config.ts
 │   ├── Dockerfile
 │   └── package.json
-├── Sample Data/                   # NYC Airbnb data files
-│   ├── calendar.csv.gz            # 13M+ rows of daily availability/pricing
-│   ├── listings.csv               # 36K listings with 85 columns
-│   ├── listings(1).csv            # Summary listing view
-│   ├── reviews.csv                # 1M+ reviews
-│   ├── neighbourhoods.csv         # Neighbourhood names
-│   └── neighbourhoods.geojson     # Neighbourhood boundaries
+├── Sample Data/                   # NYC Airbnb data files used by the app
+│   ├── listings.csv               # Detailed listings dataset
+│   ├── neighbourhoods.csv         # Neighbourhood names and boroughs
+│   ├── reviews.csv                # Present locally but currently ignored by the app
+│   └── reviews 2.csv              # Present locally but currently ignored by the app
 ├── docker-compose.yml
 └── README.md
 ```
@@ -237,4 +233,4 @@ airbnb/
 
 ## Data Source
 
-[Inside Airbnb](http://insideairbnb.com/) — New York City, scraped February 2026. The dataset is real, non-trivial (~100M+ data points across calendar, listings, and reviews), and cannot be trivially loaded into context.
+[Inside Airbnb](http://insideairbnb.com/) — New York City, scraped February 2026. The app currently uses a detailed listings export plus neighbourhood reference data. Review and calendar data are excluded from the active analysis flow in the current configuration.
