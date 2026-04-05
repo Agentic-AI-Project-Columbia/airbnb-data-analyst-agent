@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import asyncio
+import re
 
 from dotenv import load_dotenv
 
@@ -49,7 +50,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from agents import Runner
-from agent_defs.orchestrator import orchestrator_agent
+from agent_defs.collector import collector_agent
+from agent_defs.analyst import analyst_agent
+from agent_defs.hypothesizer import hypothesizer_agent
 
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "artifacts")
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
@@ -133,6 +136,24 @@ def _safe_truncate(text: str, limit: int = 2000) -> str:
     return text[:limit] + f"\n... ({len(text) - limit} chars truncated)"
 
 
+def _clean_final_answer(text: str) -> str:
+    cleaned = text
+    cleaned = re.sub(
+        r"\s*\(?(?:see (?:filename|file):?|see below for visualization\.?)\s*`?[^`\n)]*`?\)?",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"`?[\w.-]+\.(?:png|jpg|jpeg|gif|webp|svg|csv)`?",
+        "the chart",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
+
 def _has_visible_trace_steps(trace: list[dict]) -> bool:
     return any(
         step.get("type") != "agent_start" or step.get("agent") != "Orchestrator"
@@ -167,6 +188,236 @@ def _finalize_trace(trace: list[dict], current_agent: str, final_output: str | N
     return trace
 
 
+async def _record_trace_step(trace: list[dict], step: dict, websocket: WebSocket | None = None) -> None:
+    trace.append(step)
+    if websocket is not None:
+        await websocket.send_json({"type": "trace", "step": step})
+
+
+async def _run_agent_stage(
+    agent,
+    stage_input: str,
+    trace: list[dict],
+    websocket: WebSocket | None = None,
+) -> tuple[str, str]:
+    current_agent = agent.name
+    await _record_trace_step(
+        trace,
+        {
+            "type": "agent_start",
+            "agent": current_agent,
+            "ts": time.time(),
+        },
+        websocket,
+    )
+
+    result = Runner.run_streamed(
+        agent,
+        input=stage_input,
+        run_config=OPENROUTER_RUN_CONFIG,
+    )
+
+    async for event in result.stream_events():
+        if event.type == "agent_updated_stream_event":
+            current_agent = event.new_agent.name
+            await _record_trace_step(
+                trace,
+                {
+                    "type": "agent_start",
+                    "agent": current_agent,
+                    "ts": time.time(),
+                },
+                websocket,
+            )
+
+        elif event.type == "run_item_stream_event":
+            if event.item.type == "handoff_output_item":
+                await _record_trace_step(
+                    trace,
+                    {
+                        "type": "handoff",
+                        "source": event.item.source_agent.name,
+                        "target": event.item.target_agent.name,
+                        "ts": time.time(),
+                    },
+                    websocket,
+                )
+
+            elif event.item.type == "tool_call_item":
+                raw = event.item.raw_item
+                await _record_trace_step(
+                    trace,
+                    {
+                        "type": "tool_call",
+                        "agent": current_agent,
+                        "tool": getattr(raw, "name", "unknown"),
+                        "input": _safe_truncate(getattr(raw, "arguments", "") or "", 3000),
+                        "ts": time.time(),
+                    },
+                    websocket,
+                )
+
+            elif event.item.type == "tool_call_output_item":
+                output = str(event.item.output) if event.item.output else ""
+                await _record_trace_step(
+                    trace,
+                    {
+                        "type": "tool_output",
+                        "agent": current_agent,
+                        "output": _safe_truncate(output),
+                        "ts": time.time(),
+                    },
+                    websocket,
+                )
+
+            elif event.item.type == "message_output_item":
+                text = ItemHelpers.text_message_output(event.item)
+                if text.strip():
+                    await _record_trace_step(
+                        trace,
+                        {
+                            "type": "message",
+                            "agent": current_agent,
+                            "content": _safe_truncate(text, 500),
+                            "ts": time.time(),
+                        },
+                        websocket,
+                    )
+
+    final_output = result.final_output
+    final_text = "" if final_output is None else str(final_output)
+    if agent.name == "Hypothesis Generator":
+        final_text = _clean_final_answer(final_text)
+    return current_agent, final_text
+
+
+def _build_collector_input(resolved_request: str) -> str:
+    return (
+        "Stage 1 of 3: Data Collection.\n"
+        "Collect only the data needed to answer the request.\n"
+        "Do not provide the final answer.\n\n"
+        f"Resolved user request:\n{resolved_request}"
+    )
+
+
+def _build_analyst_input(resolved_request: str, collector_output: str) -> str:
+    return (
+        "Stage 2 of 3: Exploratory Data Analysis.\n"
+        "Use the collected data below to compute findings, patterns, and caveats.\n"
+        "Do not provide the final polished user answer yet.\n\n"
+        f"Resolved user request:\n{resolved_request}\n\n"
+        f"Collected data:\n{collector_output}"
+    )
+
+
+def _build_hypothesis_input(
+    resolved_request: str,
+    collector_output: str,
+    analyst_output: str,
+) -> str:
+    return (
+        "Stage 3 of 3: Final synthesis.\n"
+        "Use the collected data and analyst findings to produce the final user-facing answer.\n"
+        "Include supporting evidence and visualizations when useful.\n\n"
+        f"Resolved user request:\n{resolved_request}\n\n"
+        f"Collected data:\n{collector_output}\n\n"
+        f"Analyst findings:\n{analyst_output}"
+    )
+
+
+async def _run_pipeline(
+    question: str,
+    history: list[dict] | None,
+    trace: list[dict],
+    websocket: WebSocket | None = None,
+) -> str:
+    resolved_request = _build_runner_input(question, history)
+
+    await _record_trace_step(
+        trace,
+        {
+            "type": "agent_start",
+            "agent": "Orchestrator",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+    await _record_trace_step(
+        trace,
+        {
+            "type": "message",
+            "agent": "Orchestrator",
+            "content": "Running a fixed three-stage pipeline: collect data, analyze findings, then synthesize the final answer.",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+
+    await _record_trace_step(
+        trace,
+        {
+            "type": "handoff",
+            "source": "Orchestrator",
+            "target": "Data Collector",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+    _, collector_output = await _run_agent_stage(
+        collector_agent,
+        _build_collector_input(resolved_request),
+        trace,
+        websocket,
+    )
+
+    await _record_trace_step(
+        trace,
+        {
+            "type": "handoff",
+            "source": "Data Collector",
+            "target": "EDA Analyst",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+    _, analyst_output = await _run_agent_stage(
+        analyst_agent,
+        _build_analyst_input(resolved_request, collector_output),
+        trace,
+        websocket,
+    )
+
+    await _record_trace_step(
+        trace,
+        {
+            "type": "handoff",
+            "source": "EDA Analyst",
+            "target": "Hypothesis Generator",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+    current_agent, final_output = await _run_agent_stage(
+        hypothesizer_agent,
+        _build_hypothesis_input(resolved_request, collector_output, analyst_output),
+        trace,
+        websocket,
+    )
+
+    await _record_trace_step(
+        trace,
+        {
+            "type": "message",
+            "agent": "Orchestrator",
+            "content": "The orchestrator completed all three stages and returned the final answer.",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+
+    return final_output
+
+
 @app.post("/api/analyze")
 async def analyze(payload: dict):
     """HTTP endpoint: accepts {"question": "..."} and returns the full analysis with agent trace."""
@@ -177,69 +428,13 @@ async def analyze(payload: dict):
 
     try:
         existing_artifacts = set(_collect_artifacts())
-        result = Runner.run_streamed(
-            orchestrator_agent,
-            input=_build_runner_input(question, history),
-            run_config=OPENROUTER_RUN_CONFIG,
-        )
         trace: list[dict] = []
-        current_agent = "Orchestrator"
-
-        async for event in result.stream_events():
-            if event.type == "agent_updated_stream_event":
-                current_agent = event.new_agent.name
-                trace.append({
-                    "type": "agent_start",
-                    "agent": current_agent,
-                    "ts": time.time(),
-                })
-
-            elif event.type == "run_item_stream_event":
-                if event.item.type == "handoff_output_item":
-                    source = event.item.source_agent.name
-                    target = event.item.target_agent.name
-                    trace.append({
-                        "type": "handoff",
-                        "source": source,
-                        "target": target,
-                        "ts": time.time(),
-                    })
-
-                elif event.item.type == "tool_call_item":
-                    raw = event.item.raw_item
-                    tool_name = getattr(raw, "name", None) or "unknown"
-                    tool_args = getattr(raw, "arguments", None) or ""
-                    trace.append({
-                        "type": "tool_call",
-                        "agent": current_agent,
-                        "tool": tool_name,
-                        "input": _safe_truncate(tool_args, 3000),
-                        "ts": time.time(),
-                    })
-
-                elif event.item.type == "tool_call_output_item":
-                    output = str(event.item.output) if event.item.output else ""
-                    trace.append({
-                        "type": "tool_output",
-                        "agent": current_agent,
-                        "output": _safe_truncate(output),
-                        "ts": time.time(),
-                    })
-
-                elif event.item.type == "message_output_item":
-                    text = ItemHelpers.text_message_output(event.item)
-                    if text.strip():
-                        trace.append({
-                            "type": "message",
-                            "agent": current_agent,
-                            "content": _safe_truncate(text, 500),
-                            "ts": time.time(),
-                        })
+        result = await _run_pipeline(question, history, trace)
 
         return {
-            "answer": result.final_output,
+            "answer": result,
             "artifacts": _collect_new_artifacts(existing_artifacts),
-            "trace": _finalize_trace(trace, current_agent, result.final_output),
+            "trace": _finalize_trace(trace, "Hypothesis Generator", result),
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -269,48 +464,12 @@ async def websocket_analyze(websocket: WebSocket):
 
             try:
                 existing_artifacts = set(_collect_artifacts())
-                result = Runner.run_streamed(
-                    orchestrator_agent,
-                    input=_build_runner_input(question, history),
-                    run_config=OPENROUTER_RUN_CONFIG,
-                )
-                current_agent = "Orchestrator"
-
-                async for event in result.stream_events():
-                    if event.type == "agent_updated_stream_event":
-                        current_agent = event.new_agent.name
-                        await websocket.send_json({
-                            "type": "trace",
-                            "step": {"type": "agent_start", "agent": current_agent, "ts": time.time()},
-                        })
-
-                    elif event.type == "run_item_stream_event":
-                        if event.item.type == "handoff_output_item":
-                            await websocket.send_json({
-                                "type": "trace",
-                                "step": {
-                                    "type": "handoff",
-                                    "source": event.item.source_agent.name,
-                                    "target": event.item.target_agent.name,
-                                    "ts": time.time(),
-                                },
-                            })
-                        elif event.item.type == "tool_call_item":
-                            raw = event.item.raw_item
-                            await websocket.send_json({
-                                "type": "trace",
-                                "step": {
-                                    "type": "tool_call",
-                                    "agent": current_agent,
-                                    "tool": getattr(raw, "name", "unknown"),
-                                    "input": _safe_truncate(getattr(raw, "arguments", "") or "", 3000),
-                                    "ts": time.time(),
-                                },
-                            })
+                trace: list[dict] = []
+                final_output = await _run_pipeline(question, history, trace, websocket)
 
                 await websocket.send_json({
                     "type": "result",
-                    "content": result.final_output,
+                    "content": final_output,
                     "artifacts": _collect_new_artifacts(existing_artifacts),
                 })
             except Exception as e:

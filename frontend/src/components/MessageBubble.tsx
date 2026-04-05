@@ -27,6 +27,14 @@ export type Message = {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
+function getArtifactName(path: string): string {
+  return path.split("/").pop() || path;
+}
+
+function isImageArtifact(path: string): boolean {
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(path);
+}
+
 export default function MessageBubble({ message }: { message: Message }) {
   if (message.role === "status") {
     return (
@@ -73,16 +81,41 @@ export default function MessageBubble({ message }: { message: Message }) {
 
         {message.artifacts && message.artifacts.length > 0 && (
           <div className="mt-4 space-y-3">
-            {message.artifacts.map((artifact, i) => (
-              <div key={i} className="rounded-lg overflow-hidden border border-[var(--color-border)]">
-                <img
-                  src={`${BACKEND_URL}${artifact}`}
-                  alt={`Chart ${i + 1}`}
-                  className="w-full"
-                  loading="lazy"
-                />
-              </div>
-            ))}
+            {message.artifacts.map((artifact, i) => {
+              const artifactUrl = `${BACKEND_URL}${artifact}`;
+              const artifactName = getArtifactName(artifact);
+
+              if (isImageArtifact(artifact)) {
+                return (
+                  <div
+                    key={i}
+                    className="rounded-lg overflow-hidden border border-[var(--color-border)]"
+                  >
+                    <img
+                      src={artifactUrl}
+                      alt={artifactName}
+                      className="w-full"
+                      loading="lazy"
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <a
+                  key={i}
+                  href={artifactUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3 text-sm hover:border-[var(--color-coral)]"
+                >
+                  <span className="font-medium text-[var(--color-navy)]">
+                    {artifactName}
+                  </span>
+                  <span className="text-[var(--color-gray-warm)]">Open file</span>
+                </a>
+              );
+            })}
           </div>
         )}
 

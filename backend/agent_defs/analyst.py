@@ -27,6 +27,7 @@ Your final response should be a structured summary of findings with:
 - The specific metrics you computed
 - The values you found  
 - Your interpretation of what each finding means
+- No final user-facing recommendation or polished conclusion; the Hypothesis Generator handles that last step
 """
 
 

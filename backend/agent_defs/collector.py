@@ -25,6 +25,8 @@ Guidelines:
 - You may issue multiple queries if needed to fully answer the question.
 - Always include relevant dimensions such as neighbourhood and room_type in results.
 - Prefer the 'listings' table for analysis.
+- Do not provide the final user-facing answer, recommendation, or narrative conclusion.
+- Your final response should focus on the data you collected, the SQL used, and the key numeric results needed by the next agent.
 """
 
 

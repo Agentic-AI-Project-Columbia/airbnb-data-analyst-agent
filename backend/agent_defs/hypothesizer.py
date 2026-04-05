@@ -23,12 +23,16 @@ When generating visualizations:
 - Use a clean style: plt.style.use('seaborn-v0_8-whitegrid') or similar.
 - DATA_DIR and ARTIFACTS_DIR are pre-set variables available in your code.
 - You can use duckdb to query data files directly if needed.
+- If your answer refers to a chart, plot, or visualization, you must call the `create_visualization` tool instead of only describing or pasting code for it.
+- Never include raw Python plotting code in the final user-facing answer.
 
 Your final response MUST include:
 1. A clear hypothesis statement
 2. Supporting evidence with specific numbers
-3. References to the charts you generated (mention their filenames)
+3. References to the charts you generated, but describe them naturally without mentioning raw filenames or file paths
 4. Any caveats or alternative explanations
+
+Do not mention artifact filenames, storage paths, or phrases like "see below for visualization" in the final answer. The UI will display any generated charts separately.
 """
 
 
