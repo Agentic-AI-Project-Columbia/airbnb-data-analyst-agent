@@ -8,10 +8,10 @@ type ChatInputProps = {
 };
 
 const SUGGESTED_QUESTIONS = [
-  "Which neighbourhoods have the highest average Airbnb prices for entire homes?",
-  "Compare Manhattan and Brooklyn listings by price, room type, and review volume.",
-  "What listing features are most common among high-priced Airbnb listings?",
-  "What are the most common themes in reviews for top-rated listings?",
+  "Which neighbourhoods have the highest prices for entire homes?",
+  "Compare Manhattan vs Brooklyn by price, room type, and reviews.",
+  "Which features are most common in high-priced listings?",
+  "What review themes appear most often in top-rated listings?",
 ];
 
 export default function ChatInput({ onSend, disabled }: ChatInputProps) {
