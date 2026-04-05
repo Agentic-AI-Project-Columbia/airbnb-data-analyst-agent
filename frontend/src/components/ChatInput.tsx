@@ -8,10 +8,10 @@ type ChatInputProps = {
 };
 
 const SUGGESTED_QUESTIONS = [
-  "Which NYC neighbourhoods have the highest Airbnb prices?",
-  "How does room type affect pricing and availability?",
-  "What seasonal trends exist in the calendar data?",
-  "Is there a correlation between reviews and price?",
+  "Which neighbourhoods have the highest average Airbnb prices for entire homes?",
+  "Compare Manhattan and Brooklyn listings by price, room type, and review volume.",
+  "What listing features are most common among high-priced Airbnb listings?",
+  "What are the most common themes in reviews for top-rated listings?",
 ];
 
 export default function ChatInput({ onSend, disabled }: ChatInputProps) {
@@ -62,7 +62,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               handleSubmit();
             }
           }}
-          placeholder="Ask a question about NYC Airbnb data..."
+          placeholder="Ask a strategic Airbnb marketplace question..."
           disabled={disabled}
           rows={1}
           className="flex-1 resize-none bg-transparent px-3 py-2 text-[0.95rem]

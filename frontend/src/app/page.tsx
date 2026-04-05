@@ -160,16 +160,17 @@ export default function Home() {
                 What would you like to explore?
               </h2>
               <p className="text-[var(--color-gray-warm)] max-w-md mb-2 text-[0.95rem]">
-                Ask any question about NYC Airbnb data. Our multi-agent system
-                will collect data, perform analysis, and form a hypothesis with
-                supporting visualizations.
+                Explore pricing, neighbourhood patterns, listing features, and
+                review text from the NYC Airbnb dataset. Ask a practical
+                analysis question and the system will return findings with
+                supporting visuals.
               </p>
               <div className="flex flex-wrap justify-center gap-2 mt-2 text-xs text-[var(--color-gray-warm)]">
                 <span className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
-                  36K+ listings
+                  37K+ listings
                 </span>
                 <span className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
-                  13M+ calendar rows
+                  neighbourhood insights
                 </span>
                 <span className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
                   1M+ reviews
