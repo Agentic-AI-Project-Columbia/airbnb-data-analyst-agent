@@ -10,11 +10,55 @@ import MessageBubble, {
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+const WS_BACKEND_URL = BACKEND_URL.replace(/^http/, "ws");
+
+function getStatusFromTraceStep(step: TraceStep): {
+  agent: string;
+  content: string;
+} | null {
+  if (step.type === "handoff" && step.target) {
+    return {
+      agent: step.target,
+      content: `Handing work to ${step.target}...`,
+    };
+  }
+
+  if (step.type === "tool_call") {
+    const toolLabel =
+      step.tool === "query_database"
+        ? "Querying the dataset..."
+        : step.tool === "create_visualization"
+          ? "Generating visualization..."
+          : `Running ${step.tool || "tool"}...`;
+    return {
+      agent: step.agent || "Agent",
+      content: toolLabel,
+    };
+  }
+
+  if (step.type === "message" && step.agent) {
+    return {
+      agent: step.agent,
+      content: "Preparing response...",
+    };
+  }
+
+  if (step.type === "agent_start" && step.agent) {
+    return {
+      agent: step.agent,
+      content: `${step.agent} is working...`,
+    };
+  }
+
+  return null;
+}
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const traceRef = useRef<TraceStep[]>([]);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,46 +131,108 @@ export default function Home() {
         agent: "Orchestrator",
       });
 
+      traceRef.current = [];
+
       try {
-        const res = await fetch(`${BACKEND_URL}/api/analyze`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, history }),
-        });
+        if (socketRef.current) {
+          socketRef.current.close();
+        }
 
-        setMessages((prev) => prev.filter((m) => m.role !== "status"));
+        const socket = new WebSocket(`${WS_BACKEND_URL}/ws/analyze`);
+        socketRef.current = socket;
 
-        if (!res.ok) {
-          const err = await res.json();
+        socket.onopen = () => {
+          socket.send(JSON.stringify({ question, history }));
+        };
+
+        socket.onmessage = (event) => {
+          const payload = JSON.parse(event.data);
+
+          if (payload.type === "status") {
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === statusId
+                  ? {
+                      ...message,
+                      content: payload.content || message.content,
+                      agent: payload.agent || message.agent,
+                    }
+                  : message
+              )
+            );
+            return;
+          }
+
+          if (payload.type === "trace" && payload.step) {
+            traceRef.current = [...traceRef.current, payload.step as TraceStep];
+            const statusUpdate = getStatusFromTraceStep(payload.step as TraceStep);
+            if (statusUpdate) {
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === statusId
+                    ? {
+                        ...message,
+                        content: statusUpdate.content,
+                        agent: statusUpdate.agent,
+                      }
+                    : message
+                )
+              );
+            }
+            return;
+          }
+
+          if (payload.type === "result") {
+            setMessages((prev) => prev.filter((m) => m.id !== statusId));
+            const trace =
+              traceRef.current.length > 0
+                ? traceRef.current
+                : buildFallbackTrace(question, payload.content, startedAt);
+
+            addMessage({
+              id: (Date.now() + 2).toString(),
+              role: "assistant",
+              content: payload.content,
+              artifacts: payload.artifacts,
+              trace,
+            });
+            setLoading(false);
+            socket.close();
+            return;
+          }
+
+          if (payload.type === "error") {
+            setMessages((prev) => prev.filter((m) => m.id !== statusId));
+            addMessage({
+              id: (Date.now() + 2).toString(),
+              role: "assistant",
+              content: `**Error:** ${payload.content || "Something went wrong"}`,
+            });
+            setLoading(false);
+            socket.close();
+          }
+        };
+
+        socket.onerror = () => {
+          setMessages((prev) => prev.filter((m) => m.id !== statusId));
           addMessage({
             id: (Date.now() + 2).toString(),
             role: "assistant",
-            content: `**Error:** ${err.error || "Something went wrong"}`,
+            content: `**Connection error:** Could not reach the backend. Make sure the server is running at ${BACKEND_URL}`,
           });
-          return;
-        }
+          setLoading(false);
+        };
 
-        const data = await res.json();
-        const trace =
-          Array.isArray(data.trace) && data.trace.length > 0
-            ? data.trace
-            : buildFallbackTrace(question, data.answer, startedAt);
-
-        addMessage({
-          id: (Date.now() + 2).toString(),
-          role: "assistant",
-          content: data.answer,
-          artifacts: data.artifacts,
-          trace,
-        });
+        socket.onclose = () => {
+          socketRef.current = null;
+        };
       } catch {
-        setMessages((prev) => prev.filter((m) => m.role !== "status"));
+        setMessages((prev) => prev.filter((m) => m.id !== statusId));
         addMessage({
           id: (Date.now() + 2).toString(),
           role: "assistant",
           content: `**Connection error:** Could not reach the backend. Make sure the server is running at ${BACKEND_URL}`,
         });
-      } finally {
         setLoading(false);
       }
     },
