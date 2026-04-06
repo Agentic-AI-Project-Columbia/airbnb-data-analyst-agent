@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ThinkingTrace from "./ThinkingTrace";
@@ -33,6 +34,47 @@ function getArtifactName(path: string): string {
 
 function isImageArtifact(path: string): boolean {
   return /\.(png|jpe?g|gif|webp|svg)$/i.test(path);
+}
+
+function ImageArtifact({
+  artifactUrl,
+  artifactName,
+}: {
+  artifactUrl: string;
+  artifactName: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+      {!failed ? (
+        <img
+          src={artifactUrl}
+          alt={artifactName}
+          className="w-full"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="px-4 py-6 text-sm text-[var(--color-gray-warm)]">
+          Preview unavailable for this chart.
+        </div>
+      )}
+      <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-2 text-sm">
+        <span className="font-medium text-[var(--color-navy)]">
+          {artifactName}
+        </span>
+        <a
+          href={artifactUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[var(--color-coral)] hover:underline"
+        >
+          Open image
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function MessageBubble({ message }: { message: Message }) {
@@ -81,23 +123,21 @@ export default function MessageBubble({ message }: { message: Message }) {
 
         {message.artifacts && message.artifacts.length > 0 && (
           <div className="mt-4 space-y-3">
+            <div className="text-xs text-[var(--color-gray-warm)]">
+              Debug: {message.artifacts.length} artifact
+              {message.artifacts.length === 1 ? "" : "s"} returned
+            </div>
             {message.artifacts.map((artifact, i) => {
               const artifactUrl = `${BACKEND_URL}${artifact}`;
               const artifactName = getArtifactName(artifact);
 
               if (isImageArtifact(artifact)) {
                 return (
-                  <div
+                  <ImageArtifact
                     key={i}
-                    className="rounded-lg overflow-hidden border border-[var(--color-border)]"
-                  >
-                    <img
-                      src={artifactUrl}
-                      alt={artifactName}
-                      className="w-full"
-                      loading="lazy"
-                    />
-                  </div>
+                    artifactUrl={artifactUrl}
+                    artifactName={artifactName}
+                  />
                 );
               }
 
@@ -118,6 +158,13 @@ export default function MessageBubble({ message }: { message: Message }) {
             })}
           </div>
         )}
+
+        {message.role === "assistant" &&
+          (!message.artifacts || message.artifacts.length === 0) && (
+            <div className="mt-4 text-xs text-[var(--color-gray-warm)]">
+              Debug: 0 artifacts returned
+            </div>
+          )}
 
         {message.trace && message.trace.length > 0 && (
           <ThinkingTrace steps={message.trace} />

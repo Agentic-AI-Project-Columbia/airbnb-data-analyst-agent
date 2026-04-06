@@ -55,6 +55,7 @@ next-env.d.ts
 
 # Docker
 *.log
+backend/artifacts/
 
 # Misc
 *.pem

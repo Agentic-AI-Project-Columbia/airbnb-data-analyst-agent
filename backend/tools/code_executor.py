@@ -39,7 +39,23 @@ def execute_python(code: str) -> str:
         f"ARTIFACTS_DIR = r'{run_artifacts_dir}'\n"
         f"DATA_DIR = r'{data_dir}'\n"
     )
-    full_code = preamble + code
+    postamble = (
+        "\n\n"
+        "# Auto-save any matplotlib figures left open by the generated code.\n"
+        "try:\n"
+        "    import os as _artifact_os\n"
+        "    import matplotlib.pyplot as _artifact_plt\n"
+        "    _existing_artifacts = set(_artifact_os.listdir(ARTIFACTS_DIR))\n"
+        "    _figure_numbers = list(_artifact_plt.get_fignums())\n"
+        "    if _figure_numbers and not _existing_artifacts:\n"
+        "        for _index, _figure_number in enumerate(_figure_numbers, start=1):\n"
+        "            _figure = _artifact_plt.figure(_figure_number)\n"
+        "            _output_path = _artifact_os.path.join(ARTIFACTS_DIR, f'chart_{_index}.png')\n"
+        "            _figure.savefig(_output_path, dpi=150, bbox_inches='tight')\n"
+        "except Exception as _artifact_save_error:\n"
+        "    print(f'[artifact-save-warning] {_artifact_save_error}')\n"
+    )
+    full_code = preamble + code + postamble
 
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8"
