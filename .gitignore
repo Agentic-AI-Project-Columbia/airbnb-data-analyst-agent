@@ -39,6 +39,7 @@ Sample Data/listings.csv
 Sample Data/reviews.csv
 Sample Data/reviews.csv.gz
 Sample Data/reviews 2.csv
+Sample Data/archive-2026/
 
 # Debug logs
 npm-debug.log*

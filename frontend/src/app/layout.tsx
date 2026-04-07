@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="en"
       className={`${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-dm-sans)]">
+      <body suppressHydrationWarning className="min-h-full flex flex-col font-[family-name:var(--font-dm-sans)]">
         {children}
       </body>
     </html>

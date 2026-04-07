@@ -99,41 +99,7 @@ body {
   border-radius: 3px;
 }
 
-/* ── Thinking Trace ── */
-
-.trace-panel-closed {
-  max-height: 0;
-  opacity: 0;
-}
-
-.trace-panel-open {
-  max-height: 5000px;
-  opacity: 1;
-}
-
-.trace-timeline-line {
-  position: absolute;
-  left: 0;
-  top: 4px;
-  bottom: 4px;
-  width: 1.5px;
-  background: linear-gradient(
-    180deg,
-    var(--color-teal) 0%,
-    var(--color-border) 50%,
-    var(--color-coral) 100%
-  );
-  border-radius: 1px;
-}
-
-.trace-step {
-  transition: background-color 0.15s ease;
-}
-
-.trace-step:hover {
-  background-color: rgba(0, 166, 153, 0.03);
-  border-radius: 6px;
-}
+/* ── Agent Trace ── */
 
 .trace-code-block {
   background: #1e1e2e;
@@ -142,12 +108,185 @@ body {
   tab-size: 2;
 }
 
-.trace-output-block {
-  background: var(--color-surface-alt);
-  color: var(--color-navy);
-  border: 1px solid var(--color-border);
-}
-
 .trace-toggle:hover svg {
   color: var(--color-teal);
+}
+
+/* Pipeline progress bar */
+.pipeline-stage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--color-border);
+  white-space: nowrap;
+}
+
+/* Stage cards */
+.stage-card {
+  border-left: 3px solid var(--color-border);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  transition: box-shadow 0.15s ease;
+}
+
+.stage-card:hover {
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* SQL table name pills */
+.sql-table-name {
+  display: inline;
+  background: rgba(255, 90, 95, 0.15);
+  color: #FF5A5F;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sql-table-name:hover {
+  background: rgba(255, 90, 95, 0.25);
+  border-color: rgba(255, 90, 95, 0.3);
+}
+
+.sql-table-name-active {
+  background: rgba(255, 90, 95, 0.25);
+  border-color: #FF5A5F;
+}
+
+/* Schema popover */
+.schema-popover {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Result badge */
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-teal);
+  background: rgba(0, 166, 153, 0.08);
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 166, 153, 0.15);
+}
+
+/* ── Waiting Game ── */
+
+@keyframes gameSlideIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.waiting-game-enter {
+  animation: gameSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.memory-card {
+  width: 64px;
+  height: 64px;
+  perspective: 500px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.memory-card-inner {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+}
+
+.memory-card-flipped .memory-card-inner {
+  transform: rotateY(180deg);
+}
+
+.memory-card-front,
+.memory-card-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+}
+
+.memory-card-front {
+  background: linear-gradient(135deg, var(--color-coral) 0%, var(--color-coral-dark) 100%);
+  box-shadow: 0 2px 8px rgba(255, 90, 95, 0.18);
+}
+
+.memory-card-front::after {
+  content: "?";
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.memory-card-back {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  transform: rotateY(180deg);
+}
+
+.memory-card-matched .memory-card-back {
+  border-color: var(--color-teal);
+  background: rgba(0, 166, 153, 0.06);
+  box-shadow: 0 0 12px rgba(0, 166, 153, 0.12);
+}
+
+@media (max-width: 400px) {
+  .memory-card {
+    width: 52px;
+    height: 52px;
+  }
+  .memory-card-front::after {
+    font-size: 1rem;
+  }
+  .memory-card .memory-card-back span {
+    font-size: 1.25rem;
+  }
+}
+
+/* Hypothesis box */
+.hypothesis-box {
+  background: rgba(255, 90, 95, 0.06);
+  border: 1px solid rgba(255, 90, 95, 0.15);
+  border-radius: 8px;
+  padding: 12px 16px;
 }

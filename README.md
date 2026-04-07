@@ -1,6 +1,6 @@
 # Airbnb Multi-Agent Data Analyst
 
-A multi-agent system that performs the first three steps of a data analysis lifecycle on NYC Airbnb data: **Collect**, **Explore (EDA)**, and **Hypothesize**.
+A multi-agent system that performs the full data analysis lifecycle on NYC Airbnb data: **Collect**, **Explore (EDA)**, **Hypothesize**, and **Present**.
 
 Built with the **OpenAI Agents SDK**, **DuckDB**, **FastAPI**, and **Next.js**.
 
@@ -22,17 +22,20 @@ User Question
        ├──► EDA Analyst ──► Python Code Executor
        │         │
        │         ▼ (statistical findings)
-       └──► Hypothesis Generator ──► Python Code Executor (charts)
+       ├──► Hypothesis Generator ──► Python Code Executor (analytical charts)
+       │         │
+       │         ▼ (hypothesis + evidence)
+       └──► Presenter ──► Python Code Executor (presentation charts)
                   │
                   ▼
-         Hypothesis + Visualizations
+         Polished Answer + Visualizations
 ```
 
-Four agents, three tools, one pipeline.
+Five agents, three tools, one pipeline.
 
 ---
 
-## The Three Steps
+## The Pipeline
 
 ### Step 1: Collect
 
@@ -66,7 +69,16 @@ The **EDA Analyst** agent receives collected data and writes Python code (pandas
 | Agent | `backend/agent_defs/hypothesizer.py` → `hypothesizer_agent` |
 | Tool | `backend/tools/code_executor.py` → `execute_python()` |
 
-The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded hypothesis. It writes Python code to generate matplotlib/seaborn visualizations (saved as PNG), then presents a narrative citing specific data points with supporting charts.
+The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded hypothesis. It writes Python code to generate analytical visualizations (saved as PNG) — detailed breakdowns, distributions, and correlations that support its reasoning.
+
+### Step 4: Present
+
+| What | Where |
+|------|-------|
+| Agent | `backend/agent_defs/presenter.py` → `presenter_agent` |
+| Tool | `backend/tools/code_executor.py` → `execute_python()` |
+
+The **Presenter** agent takes the full pipeline output and transforms it into a polished, visually rich briefing designed for non-technical users. It generates presentation-quality charts — annotated, clearly labeled, with insight-driven titles — and weaves them into a concise narrative. Think of it as the difference between analyst notes and a finished slide deck.
 
 ---
 
@@ -78,7 +90,7 @@ The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded 
 | **Agent Framework** | OpenAI Agents SDK (`openai-agents` package) — `Agent`, `function_tool`, `Runner.run()`, `handoffs` |
 | **Tool Calling** | `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (Python charts) |
 | **Non-trivial Dataset** | NYC Airbnb data from Inside Airbnb: a detailed listings table, a rich review-text table, and neighbourhood reference data |
-| **Multi-agent Pattern** | Orchestrator-handoff: `orchestrator_agent` hands off sequentially to `collector_agent` → `analyst_agent` → `hypothesizer_agent` (see `backend/agent_defs/orchestrator.py`) |
+| **Multi-agent Pattern** | Orchestrator-handoff: `orchestrator_agent` hands off sequentially to `collector_agent` → `analyst_agent` → `hypothesizer_agent` → `presenter_agent` (see `backend/agent_defs/orchestrator.py`) |
 | **Deployed** | GCP Cloud Run (Docker containers for backend + frontend) |
 | **README** | This file |
 
@@ -91,14 +103,14 @@ The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded 
 | Where | `backend/tools/code_executor.py` → `execute_python()` |
 |-------|-------------------------------------------------------|
 
-The EDA Analyst and Hypothesis Generator agents write and execute arbitrary Python code at runtime. Code runs in a subprocess with access to pandas, numpy, scipy, matplotlib, seaborn, and duckdb. The executor captures stdout, stderr, exit code, and any saved artifacts (charts, CSVs).
+The EDA Analyst, Hypothesis Generator, and Presenter agents write and execute arbitrary Python code at runtime. Code runs in a subprocess with access to pandas, numpy, scipy, matplotlib, seaborn, and duckdb. The executor captures stdout, stderr, exit code, and any saved artifacts (charts, CSVs).
 
 ### 2. Data Visualization (2.5 pts)
 
-| Where | `backend/agent_defs/hypothesizer.py` → `create_visualization` tool |
-|-------|---------------------------------------------------------------------|
+| Where | `backend/agent_defs/hypothesizer.py` + `backend/agent_defs/presenter.py` → `create_visualization` tool |
+|-------|--------------------------------------------------------------------------------------------------------|
 
-The Hypothesis Generator writes matplotlib/seaborn code that saves charts as PNG files to an artifacts directory. These are served via FastAPI's `StaticFiles` mount at `/artifacts/` and displayed inline in the frontend chat interface.
+Both the Hypothesis Generator and Presenter write matplotlib/seaborn code that saves charts as PNG files to an artifacts directory. The Hypothesis Generator creates analytical charts (breakdowns, distributions); the Presenter creates presentation-quality visuals (annotated, insight-titled, designed for non-technical audiences). Charts are served via FastAPI's `StaticFiles` mount at `/artifacts/` and displayed inline in the frontend chat interface.
 
 ### 3. Structured Output (bonus)
 
@@ -112,7 +124,7 @@ Pydantic models define structured schemas for query results and EDA findings, en
 | Where | `frontend/src/components/ThinkingTrace.tsx` + `backend/main.py` |
 |-------|----------------------------------------------------------------|
 
-Each assistant answer can expose an expandable `Agent Thinking` panel beneath the response. When available, the backend returns a step-by-step trace of agent handoffs, tool calls, tool outputs, and intermediate messages. The frontend renders that trace as a collapsible timeline so you can inspect what happened under the hood for a given answer.
+Each assistant answer can expose an expandable `Agent Thinking` panel beneath the response. When available, the backend returns a step-by-step trace of agent handoffs, tool calls, tool outputs, and intermediate messages. The frontend renders that trace as a collapsible timeline with four stages (Collect → Analyze → Synthesize → Present) so you can inspect what happened under the hood for a given answer.
 
 If a backend response does not include detailed trace data, the frontend falls back to a compact orchestration summary so the disclosure still explains how the answer was produced.
 
@@ -196,7 +208,8 @@ airbnb/
 │   │   ├── orchestrator.py        # Orchestrator agent (handoff routing)
 │   │   ├── collector.py           # Data Collector agent + query_database tool
 │   │   ├── analyst.py             # EDA Analyst agent + run_analysis_code tool
-│   │   └── hypothesizer.py        # Hypothesis agent + create_visualization tool
+│   │   ├── hypothesizer.py        # Hypothesis agent + create_visualization tool
+│   │   └── presenter.py           # Presenter agent + create_visualization tool
 │   ├── tools/
 │   │   ├── sql_runner.py          # DuckDB connection, view registration, SQL execution
 │   │   └── code_executor.py       # Sandboxed Python execution with artifact capture

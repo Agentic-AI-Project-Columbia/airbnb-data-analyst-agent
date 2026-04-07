@@ -4,6 +4,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ThinkingTrace from "./ThinkingTrace";
+import type { TableSchema } from "./SqlQueryBlock";
 
 export type TraceStep = {
   type: "agent_start" | "handoff" | "tool_call" | "tool_output" | "message";
@@ -15,6 +16,12 @@ export type TraceStep = {
   output?: string;
   content?: string;
   ts: number;
+  tables?: string[];
+  row_count?: number;
+  columns?: string[];
+  preview?: Record<string, unknown>[];
+  exit_code?: number;
+  artifacts?: string[];
 };
 
 export type Message = {
@@ -77,7 +84,7 @@ function ImageArtifact({
   );
 }
 
-export default function MessageBubble({ message }: { message: Message }) {
+export default function MessageBubble({ message, schema }: { message: Message; schema: Record<string, TableSchema> | null }) {
   if (message.role === "status") {
     return (
       <div className="flex items-center gap-2 px-4 py-2 animate-fade-in-up">
@@ -123,11 +130,7 @@ export default function MessageBubble({ message }: { message: Message }) {
 
         {message.artifacts && message.artifacts.length > 0 && (
           <div className="mt-4 space-y-3">
-            <div className="text-xs text-[var(--color-gray-warm)]">
-              Debug: {message.artifacts.length} artifact
-              {message.artifacts.length === 1 ? "" : "s"} returned
-            </div>
-            {message.artifacts.map((artifact, i) => {
+            {message.artifacts.filter((a): a is string => typeof a === "string" && a.length > 0).map((artifact, i) => {
               const artifactUrl = `${BACKEND_URL}${artifact}`;
               const artifactName = getArtifactName(artifact);
 
@@ -159,15 +162,8 @@ export default function MessageBubble({ message }: { message: Message }) {
           </div>
         )}
 
-        {message.role === "assistant" &&
-          (!message.artifacts || message.artifacts.length === 0) && (
-            <div className="mt-4 text-xs text-[var(--color-gray-warm)]">
-              Debug: 0 artifacts returned
-            </div>
-          )}
-
         {message.trace && message.trace.length > 0 && (
-          <ThinkingTrace steps={message.trace} />
+          <ThinkingTrace steps={message.trace} schema={schema} />
         )}
       </div>
     </div>

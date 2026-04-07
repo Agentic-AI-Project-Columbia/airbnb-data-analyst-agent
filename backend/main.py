@@ -53,6 +53,7 @@ from agents import Runner
 from agent_defs.collector import collector_agent
 from agent_defs.analyst import analyst_agent
 from agent_defs.hypothesizer import hypothesizer_agent
+from agent_defs.presenter import presenter_agent
 
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "artifacts")
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
@@ -73,6 +74,13 @@ app.mount("/artifacts", StaticFiles(directory=ARTIFACTS_DIR), name="artifacts")
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/api/schema")
+async def get_schema():
+    """Return schema for all registered DuckDB views."""
+    from tools.sql_runner import get_schema_json
+    return get_schema_json()
 
 
 def _collect_artifacts() -> list[str]:
@@ -138,6 +146,13 @@ def _safe_truncate(text: str, limit: int = 2000) -> str:
 
 def _clean_final_answer(text: str) -> str:
     cleaned = text
+    # Safety net: strip any remaining fenced Python code blocks
+    cleaned = re.sub(
+        r"```(?:python|py)[\s\S]*?```",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     cleaned = re.sub(
         r"\s*\(?(?:see (?:filename|file):?|see below for visualization\.?)\s*`?[^`\n)]*`?\)?",
         "",
@@ -245,30 +260,51 @@ async def _run_agent_stage(
 
             elif event.item.type == "tool_call_item":
                 raw = event.item.raw_item
-                await _record_trace_step(
-                    trace,
-                    {
-                        "type": "tool_call",
-                        "agent": current_agent,
-                        "tool": getattr(raw, "name", "unknown"),
-                        "input": _safe_truncate(getattr(raw, "arguments", "") or "", 3000),
-                        "ts": time.time(),
-                    },
-                    websocket,
-                )
+                tool_name = getattr(raw, "name", "unknown")
+                tool_input = _safe_truncate(getattr(raw, "arguments", "") or "", 3000)
+                step = {
+                    "type": "tool_call",
+                    "agent": current_agent,
+                    "tool": tool_name,
+                    "input": tool_input,
+                    "ts": time.time(),
+                }
+                # Extract table names from SQL for query_database calls
+                if tool_name == "query_database":
+                    try:
+                        parsed_args = json.loads(tool_input)
+                        sql_text = parsed_args.get("sql", parsed_args.get("query", ""))
+                    except (json.JSONDecodeError, AttributeError):
+                        sql_text = tool_input
+                    tables = re.findall(r'(?:FROM|JOIN)\s+(\w+)', sql_text, re.IGNORECASE)
+                    step["tables"] = list(dict.fromkeys(tables))  # dedupe preserving order
+                await _record_trace_step(trace, step, websocket)
 
             elif event.item.type == "tool_call_output_item":
                 output = str(event.item.output) if event.item.output else ""
-                await _record_trace_step(
-                    trace,
-                    {
-                        "type": "tool_output",
-                        "agent": current_agent,
-                        "output": _safe_truncate(output),
-                        "ts": time.time(),
-                    },
-                    websocket,
-                )
+                step = {
+                    "type": "tool_output",
+                    "agent": current_agent,
+                    "output": _safe_truncate(output),
+                    "ts": time.time(),
+                }
+                # Try to extract structured metadata from tool output
+                try:
+                    parsed_output = json.loads(output)
+                    if isinstance(parsed_output, dict):
+                        if "row_count" in parsed_output:
+                            step["row_count"] = parsed_output["row_count"]
+                        if "columns" in parsed_output and isinstance(parsed_output["columns"], list):
+                            step["columns"] = parsed_output["columns"]
+                        if "data" in parsed_output and isinstance(parsed_output["data"], list):
+                            step["preview"] = parsed_output["data"][:3]
+                        if "exit_code" in parsed_output:
+                            step["exit_code"] = parsed_output["exit_code"]
+                        if "artifacts" in parsed_output and isinstance(parsed_output["artifacts"], list):
+                            step["artifacts"] = parsed_output["artifacts"]
+                except (json.JSONDecodeError, TypeError):
+                    pass
+                await _record_trace_step(trace, step, websocket)
 
             elif event.item.type == "message_output_item":
                 text = ItemHelpers.text_message_output(event.item)
@@ -286,14 +322,14 @@ async def _run_agent_stage(
 
     final_output = result.final_output
     final_text = "" if final_output is None else str(final_output)
-    if agent.name == "Hypothesis Generator":
+    if agent.name in ("Hypothesis Generator", "Presenter"):
         final_text = _clean_final_answer(final_text)
     return current_agent, final_text
 
 
 def _build_collector_input(resolved_request: str) -> str:
     return (
-        "Stage 1 of 3: Data Collection.\n"
+        "Stage 1 of 4: Data Collection.\n"
         "Collect only the data needed to answer the request.\n"
         "Do not provide the final answer.\n\n"
         f"Resolved user request:\n{resolved_request}"
@@ -302,7 +338,7 @@ def _build_collector_input(resolved_request: str) -> str:
 
 def _build_analyst_input(resolved_request: str, collector_output: str) -> str:
     return (
-        "Stage 2 of 3: Exploratory Data Analysis.\n"
+        "Stage 2 of 4: Exploratory Data Analysis.\n"
         "Use the collected data below to compute findings, patterns, and caveats.\n"
         "Do not provide the final polished user answer yet.\n\n"
         f"Resolved user request:\n{resolved_request}\n\n"
@@ -316,12 +352,28 @@ def _build_hypothesis_input(
     analyst_output: str,
 ) -> str:
     return (
-        "Stage 3 of 3: Final synthesis.\n"
-        "Use the collected data and analyst findings to produce the final user-facing answer.\n"
-        "Include supporting evidence and visualizations when useful.\n\n"
+        "Stage 3 of 4: Hypothesis and visualization.\n"
+        "Use the collected data and analyst findings to form a hypothesis with evidence.\n"
+        "Generate visualizations to support key findings.\n"
+        "Do not worry about polishing the final output — that happens next.\n\n"
         f"Resolved user request:\n{resolved_request}\n\n"
         f"Collected data:\n{collector_output}\n\n"
         f"Analyst findings:\n{analyst_output}"
+    )
+
+
+def _build_presenter_input(
+    resolved_request: str,
+    analyst_output: str,
+    hypothesis_output: str,
+) -> str:
+    return (
+        "Stage 4 of 4: Final presentation.\n"
+        "Transform the analysis into a polished, insight-driven answer for the user.\n"
+        "Do NOT add new analysis — just present what was found in the best possible way.\n\n"
+        f"Original user question:\n{resolved_request}\n\n"
+        f"Analyst findings:\n{analyst_output}\n\n"
+        f"Hypothesis and evidence:\n{hypothesis_output}"
     )
 
 
@@ -347,7 +399,7 @@ async def _run_pipeline(
         {
             "type": "message",
             "agent": "Orchestrator",
-            "content": "Running a fixed three-stage pipeline: collect data, analyze findings, then synthesize the final answer.",
+            "content": "Running a four-stage pipeline: collect data, analyze findings, synthesize hypothesis, then present the final answer.",
             "ts": time.time(),
         },
         websocket,
@@ -397,7 +449,7 @@ async def _run_pipeline(
         },
         websocket,
     )
-    current_agent, final_output = await _run_agent_stage(
+    _, hypothesis_output = await _run_agent_stage(
         hypothesizer_agent,
         _build_hypothesis_input(resolved_request, collector_output, analyst_output),
         trace,
@@ -407,9 +459,26 @@ async def _run_pipeline(
     await _record_trace_step(
         trace,
         {
+            "type": "handoff",
+            "source": "Hypothesis Generator",
+            "target": "Presenter",
+            "ts": time.time(),
+        },
+        websocket,
+    )
+    current_agent, final_output = await _run_agent_stage(
+        presenter_agent,
+        _build_presenter_input(resolved_request, analyst_output, hypothesis_output),
+        trace,
+        websocket,
+    )
+
+    await _record_trace_step(
+        trace,
+        {
             "type": "message",
             "agent": "Orchestrator",
-            "content": "The orchestrator completed all three stages and returned the final answer.",
+            "content": "The orchestrator completed all four stages and returned the final answer.",
             "ts": time.time(),
         },
         websocket,
@@ -434,7 +503,7 @@ async def analyze(payload: dict):
         return {
             "answer": result,
             "artifacts": _collect_new_artifacts(existing_artifacts),
-            "trace": _finalize_trace(trace, "Hypothesis Generator", result),
+            "trace": _finalize_trace(trace, "Presenter", result),
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})

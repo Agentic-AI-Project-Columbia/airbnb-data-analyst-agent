@@ -33,6 +33,35 @@ def _register_view(con: duckdb.DuckDBPyConnection, name: str, filename: str) -> 
     )
 
 
+TABLE_DESCRIPTIONS = {
+    "listings": "~37K Airbnb listings with host info, location, pricing, amenities, reviews",
+    "reviews": "~1M guest reviews with listing references, dates, and reviewer details",
+    "neighbourhoods": "NYC neighbourhood and neighbourhood group geographic reference data",
+}
+
+
+def get_schema_json() -> dict:
+    """Return structured schema for all registered DuckDB views."""
+    con = _get_connection()
+    views = con.execute(
+        "SELECT table_name FROM information_schema.tables WHERE table_type='VIEW'"
+    ).fetchall()
+
+    schema = {}
+    for (view_name,) in views:
+        cols = con.execute(
+            f"SELECT column_name, data_type FROM information_schema.columns "
+            f"WHERE table_name='{view_name}' ORDER BY ordinal_position"
+        ).fetchall()
+        row_count = con.execute(f"SELECT COUNT(*) FROM {view_name}").fetchone()[0]
+        schema[view_name] = {
+            "description": TABLE_DESCRIPTIONS.get(view_name, ""),
+            "columns": [{"name": c, "type": t} for c, t in cols],
+            "row_count": row_count,
+        }
+    return schema
+
+
 def get_schema_description() -> str:
     """Return a compact description of every registered view and its columns."""
     con = _get_connection()

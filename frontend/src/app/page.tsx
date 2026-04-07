@@ -7,6 +7,8 @@ import MessageBubble, {
   type Message,
   type TraceStep,
 } from "@/components/MessageBubble";
+import WaitingGame from "@/components/WaitingGame";
+import type { TableSchema } from "@/components/SqlQueryBlock";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -56,9 +58,17 @@ function getStatusFromTraceStep(step: TraceStep): {
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [schema, setSchema] = useState<Record<string, TableSchema> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const traceRef = useRef<TraceStep[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/schema`)
+      .then((res) => res.json())
+      .then((data) => setSchema(data))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -286,10 +296,11 @@ export default function Home() {
           ) : (
             <div className="space-y-4">
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
+                <MessageBubble key={msg.id} message={msg} schema={schema} />
               ))}
             </div>
           )}
+          {loading && <WaitingGame />}
           <div ref={bottomRef} />
         </div>
       </main>
