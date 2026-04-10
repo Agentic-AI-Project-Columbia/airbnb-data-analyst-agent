@@ -176,7 +176,7 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
 
   return (
     <div className="mt-1.5">
-      <div className="text-[0.65rem] uppercase tracking-widest text-[#8a8a9a] mb-1 font-semibold">
+      <div className="text-[0.65rem] uppercase tracking-widest text-[var(--color-gray-warm)] mb-1 font-semibold">
         {language ?? "code"}
       </div>
       <pre className="trace-code-block text-[0.78rem] leading-[1.6] rounded-lg p-3 overflow-x-auto">

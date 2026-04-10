@@ -34,8 +34,7 @@ steps:
       - '--timeout=600'
       - '--min-instances=0'
       - '--max-instances=3'
-      - '--set-env-vars=DATA_DIR=/data'
-      - '--set-secrets=OPENROUTER_API_KEY=openrouter-api-key:latest'
+      - '--set-env-vars=DATA_DIR=/data,GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=us-east1'
       - '--session-affinity'
 
   # 5. Capture backend URL for frontend build

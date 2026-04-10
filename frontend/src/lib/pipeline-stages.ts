@@ -20,9 +20,9 @@ export const STAGES: StageInfo[] = [
     key: "analyze",
     label: "Analyze",
     agent: "EDA Analyst",
-    color: "#6C5CE7",
-    borderColor: "#6C5CE7",
-    bgColor: "rgba(108, 92, 231, 0.04)",
+    color: "#FC642D",
+    borderColor: "#FC642D",
+    bgColor: "rgba(252, 100, 45, 0.04)",
   },
   {
     key: "synthesize",
@@ -36,9 +36,9 @@ export const STAGES: StageInfo[] = [
     key: "present",
     label: "Present",
     agent: "Presenter",
-    color: "#E17055",
-    borderColor: "#E17055",
-    bgColor: "rgba(225, 112, 85, 0.04)",
+    color: "#484848",
+    borderColor: "#484848",
+    bgColor: "rgba(72, 72, 72, 0.04)",
   },
 ];
 

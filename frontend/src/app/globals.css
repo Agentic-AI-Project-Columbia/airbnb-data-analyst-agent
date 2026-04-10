@@ -147,7 +147,7 @@ body {
 .sql-table-name {
   display: inline;
   background: rgba(255, 90, 95, 0.15);
-  color: #FF5A5F;
+  color: var(--color-coral);
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
@@ -166,7 +166,7 @@ body {
 
 .sql-table-name-active {
   background: rgba(255, 90, 95, 0.25);
-  border-color: #FF5A5F;
+  border-color: var(--color-coral);
 }
 
 /* Schema popover */
