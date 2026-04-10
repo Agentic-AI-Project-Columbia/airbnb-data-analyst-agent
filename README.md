@@ -1,5 +1,9 @@
 # Airbnb Multi-Agent Data Analyst
 
+> **Live Demo:** [https://airbnb-frontend-686529012610.us-east1.run.app](https://airbnb-frontend-686529012610.us-east1.run.app)
+>
+> **Backend API:** [https://airbnb-backend-686529012610.us-east1.run.app](https://airbnb-backend-686529012610.us-east1.run.app)
+
 A production-grade, multi-agent data analysis system that turns natural language questions about NYC Airbnb data into polished, insight-driven reports with visualizations — fully automated from query to presentation.
 
 Built with the **OpenAI Agents SDK**, **DuckDB**, **FastAPI**, and **Next.js 16**. Deployed on **Google Cloud Run**.
