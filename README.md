@@ -16,7 +16,7 @@ Arjun Varma & Oranich Jamkachornkiat | Columbia University | Agentic AI, Spring 
 
 **Task.** Build a fully autonomous data analyst that accepts a single natural-language question and delivers a polished, publication-quality briefing with charts — no human intervention between query and output. The system must satisfy all 7 core requirements (10 points), at least 2 elective features (5 points), and implement the three pipeline steps with depth and rigor (15 points).
 
-**Action.** We designed and deployed a **4-stage sequential pipeline** using the OpenAI Agents SDK: a *Data Collector* that translates questions into DuckDB SQL, an *EDA Analyst* that writes and executes Python for statistical analysis, a *Hypothesis Generator* that forms data-grounded conclusions with analytical charts, and a *Presenter* that produces a polished briefing with presentation-quality visualizations. Each agent writes its own code at runtime and executes it in a sandboxed subprocess. The Presenter can hand off to sub-agents to request additional data. The frontend streams every agent action in real time over WebSocket, rendering an interactive execution trace alongside the final answer. The entire system is containerized and deployed on Google Cloud Run with a CI/CD pipeline via Cloud Build.
+**Action.** We designed and deployed a **4-stage sequential pipeline** using the OpenAI Agents SDK: a *Data Collector* that translates questions into DuckDB SQL, an *EDA Analyst* that writes and executes Python for statistical analysis (with iterative SQL refinement when it discovers data gaps), a *Hypothesis Generator* that forms data-grounded conclusions with analytical charts, and a *Presenter* that produces a polished briefing with presentation-quality visualizations. Each agent writes its own code at runtime and executes it in a sandboxed subprocess. The Presenter can hand off to sub-agents to request additional data. The frontend streams every agent action in real time over WebSocket, rendering an interactive execution trace alongside the final answer. The entire system is containerized and deployed on Google Cloud Run with a CI/CD pipeline via Cloud Build.
 
 **Result.** A single question triggers SQL generation, statistical analysis, hypothesis formation, and chart creation — all within **60–90 seconds**. Verified on a test suite of 20 diverse questions with a **100% success rate**. The system implements all 7 core requirements, 5 elective features (code execution, data visualization, artifacts, structured output, iterative refinement), and the full Collect → EDA → Hypothesize pipeline with depth that adapts to every question.
 
@@ -46,6 +46,8 @@ graph TD
     O -->|"Stage 2"| A["EDA Analyst"]
     A -->|"run_analysis_code(code)"| PY1["Python Subprocess<br/><i>pandas, numpy, scipy</i>"]
     PY1 -->|"stdout + findings"| A
+    A -.->|"query_database(sql)<br/><i>iterative refinement</i>"| DB
+    DB -.->|"JSON results"| A
 
     O -->|"Stage 3"| H["Hypothesis Generator"]
     H -->|"create_visualization(code)"| PY2["Python Subprocess<br/><i>matplotlib, seaborn</i>"]
@@ -109,15 +111,16 @@ The Data Collector receives the user's question and dynamically generates SQL. T
 | **Role** | Writes and executes Python code to compute statistics, segment data, and find patterns |
 | **Agent** | `backend/agent_defs/analyst.py` |
 | **Prompt** | `backend/prompts/analyst.md` |
-| **Tool** | `run_analysis_code(code)` → `backend/tools/code_executor.py` → `execute_python()` |
-| **Engine** | Python subprocess (pandas, numpy, scipy, duckdb) |
+| **Tools** | `run_analysis_code(code)` → `backend/tools/code_executor.py` → `execute_python()`; `query_database(sql)` → `backend/tools/sql_runner.py` → `run_sql()` |
+| **Engine** | Python subprocess (pandas, numpy, scipy) + DuckDB (iterative SQL) |
 
-The EDA Analyst receives the raw query results from Stage 1 and writes Python code to explore the data. It can also query the CSV files directly via DuckDB if it needs data the Collector didn't fetch.
+The EDA Analyst receives the raw query results from Stage 1 and writes Python code to explore the data. When the initial data is insufficient — missing columns, wrong granularity, or a needed breakdown — the Analyst queries the database directly via `query_database` and continues its analysis. This creates an **iterative refinement loop**: analyze → identify gap → query → analyze deeper. The database schema is injected into the Analyst's prompt at startup, giving it full awareness of available tables and columns.
 
 **Key behaviors:**
 - Computes means, medians, percentiles, distributions, correlations, and standard deviations
 - Segments data by meaningful dimensions (borough, room type, time period)
 - Identifies outliers, anomalies, and interesting patterns
+- **Iterative refinement:** fetches additional data via SQL when analysis reveals gaps, then continues computation
 - Different questions produce entirely different code and different findings
 - Focuses on analysis, not visualization (charts come in Stage 3)
 
@@ -283,7 +286,7 @@ erDiagram
 
 ### Data Loading
 
-At startup, `backend/tools/sql_runner.py` registers three DuckDB in-memory views using `read_csv_auto(path, ignore_errors=true)`. The schema is dynamically queried via `information_schema` and injected into the Collector agent's prompt. The frontend fetches the same schema via `GET /api/schema` to power the interactive Schema Explorer.
+At startup, `backend/tools/sql_runner.py` registers three DuckDB in-memory views using `read_csv_auto(path, ignore_errors=true)`. The schema is dynamically queried via `information_schema` and injected into both the Collector and EDA Analyst agent prompts (the Analyst needs it for iterative refinement queries). The frontend fetches the same schema via `GET /api/schema` to power the interactive Schema Explorer.
 
 ---
 
@@ -309,14 +312,14 @@ At startup, `backend/tools/sql_runner.py` registers three DuckDB in-memory views
 | 2 | **Data Visualization** | 2.5 | Hypothesizer generates analytical charts; Presenter generates publication-quality charts with Airbnb color palette, insight-driven titles, and value annotations | `backend/agent_defs/hypothesizer.py`, `backend/agent_defs/presenter.py` |
 | 3 | **Artifacts** | Bonus | Charts saved as PNG to `/artifacts/{run_id}/`, served as static files, embedded inline in markdown, persisted for sharing | `backend/tools/code_executor.py` (lines 28–29), `backend/main.py` (line 78) |
 | 4 | **Structured Output** | Bonus | Pydantic models (`QueryResult`, `EDAFindings`) for typed inter-agent data flow; JSON-structured tool outputs with `columns`, `row_count`, `exit_code`, `artifacts` | `backend/models/schemas.py` |
-| 5 | **Iterative Refinement** | Bonus | Presenter can hand off to sub-agents (Data Collector, EDA Analyst) for additional data, then resume its work with the new results | `backend/agent_defs/presenter.py` (lines 36–68) |
+| 5 | **Iterative Refinement** | 2.5 | EDA Analyst has both `run_analysis_code` and `query_database` tools. When analysis reveals data gaps (missing columns, wrong granularity), the Analyst queries the database directly and continues — creating an analyze→query→analyze refinement loop within a single stage | `backend/agent_defs/analyst.py`, `backend/prompts/analyst.md` |
 
 ### Pipeline Steps (15 points)
 
 | Step | Pts | Rubric Criterion | How We Satisfy It |
 |------|-----|-------------------|--------------------|
 | **Collect** | 5 | Real data, retrieved at runtime, dynamic to different questions, accurately described | DuckDB SQL generated dynamically from NL at runtime. Different questions produce different SQL. Schema injected at startup. Three tables (37K + 985K + 230 rows). Not hard-coded. |
-| **Explore (EDA)** | 5 | At least one tool call that computes over data, surfaces specific findings, adapts to different questions | `run_analysis_code` writes and executes pandas/scipy/numpy code. Computes statistics, distributions, correlations. Different questions → different code, different findings. |
+| **Explore (EDA)** | 5 | At least one tool call that computes over data, surfaces specific findings, adapts to different questions | `run_analysis_code` writes and executes pandas/scipy/numpy code. `query_database` enables iterative refinement — the Analyst fetches additional data when it spots gaps. Computes statistics, distributions, correlations. Different questions → different code, different findings. |
 | **Hypothesize** | 5 | Grounded in data from previous steps, cites evidence, explains reasoning | Hypothesis cites specific numbers from EDA. Generates supporting charts. Presenter embeds charts inline with bold key figures. Evidence trail: SQL → statistics → hypothesis → polished briefing. |
 
 ---
@@ -334,6 +337,7 @@ At startup, `backend/tools/sql_runner.py` registers three DuckDB in-memory views
 6. **Stage 2 — Analyst** runs with 180s timeout:
    - Agent writes Python code using collected data
    - `run_analysis_code(code)` executes in a subprocess, returns stdout and findings
+   - If the collected data is insufficient, the Analyst calls `query_database(sql)` to fetch additional data and continues analysis (iterative refinement)
    - Pipeline flowchart advances to "Analyze"
 7. **Stage 3 — Hypothesizer** runs with 180s timeout:
    - Agent forms hypothesis and writes matplotlib/seaborn chart code

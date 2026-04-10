@@ -45,6 +45,21 @@ function GrayDot() {
   );
 }
 
+function LoopIcon({ color }: { color: string }) {
+  return (
+    <svg className="w-3 h-3 shrink-0 opacity-60" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M12 5.5A4.5 4.5 0 0 0 4.5 4M4 10.5A4.5 4.5 0 0 0 11.5 12"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path d="M5.5 1.5L4.5 4l2.5 1" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10.5 14.5l1-2.5-2.5-1" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function PipelineFlowchart({
   activeStage,
   completedStages,
@@ -113,6 +128,9 @@ export default function PipelineFlowchart({
               >
                 {stage.label}
               </span>
+              {stage.key === "analyze" && state !== "pending" && (
+                <LoopIcon color={stage.color} />
+              )}
             </div>
           </div>
         );
