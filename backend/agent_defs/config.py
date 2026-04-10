@@ -1,3 +1,3 @@
 import os
 
-DEFAULT_MODEL = os.environ.get("AGENT_MODEL", "google/gemini-3.1-pro-preview")
+DEFAULT_MODEL = os.environ.get("AGENT_MODEL", "google/gemini-2.5-pro")
