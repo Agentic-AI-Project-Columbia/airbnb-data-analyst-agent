@@ -193,19 +193,24 @@ def _clean_final_answer(text: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    # Remove "see filename:" type references
     cleaned = re.sub(
         r"\s*\(?(?:see (?:filename|file):?|see below for visualization\.?)\s*`?[^`\n)]*`?\)?",
         "",
         cleaned,
         flags=re.IGNORECASE,
     )
+    # Remove standalone bare filenames (but preserve markdown image syntax ![...](path))
     cleaned = re.sub(
-        r"`?[\w.-]+\.(?:png|jpg|jpeg|gif|webp|svg|csv)`?",
-        "the chart",
+        r"(?<!\()`?[\w.-]+\.(?:png|jpg|jpeg|gif|webp|svg)`?(?!\))",
+        "",
         cleaned,
         flags=re.IGNORECASE,
     )
+    # Collapse 3+ consecutive newlines to exactly 2
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    # Remove lines that contain only whitespace
+    cleaned = re.sub(r"\n[ \t]+\n", "\n\n", cleaned)
     return cleaned.strip()
 
 

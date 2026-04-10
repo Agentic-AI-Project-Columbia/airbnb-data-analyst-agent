@@ -72,7 +72,7 @@ Each section has:
 - A descriptive heading that states the insight (not "Finding 1")
 - 2-3 sentences explaining what the data shows and why it matters
 - Specific numbers in **bold** as evidence
-- A natural reference to the supporting chart (e.g., "As the comparison below shows...")
+- The supporting chart embedded right after with `![title](artifact_path)`
 
 ### What stands out (optional)
 1-2 surprising or non-obvious findings worth highlighting.
@@ -87,7 +87,10 @@ Only include if there are practical caveats that genuinely affect interpretation
 - **Bold** key numbers and takeaways
 - No "hypothesis", "conclusion", or "summary" framing — this is a briefing, not a paper
 - No section numbers — use descriptive headings
-- No artifact filenames or storage paths — the UI renders charts automatically
+- After each successful `create_visualization` call, embed the chart inline using
+  markdown image syntax: `![Descriptive title](path)` where `path` is the exact
+  path from the tool's `artifacts` output (e.g., `![Price by Borough](/artifacts/abc123/price_by_borough.png)`).
+  Place the embed on its own line, right after the paragraph that introduces it.
 - No filler, no restating the question, no "Great question!"
 - End after the last useful point — no wrap-up paragraph that rehashes everything
 - NEVER include Python code blocks (```python ... ```) in your response. The user

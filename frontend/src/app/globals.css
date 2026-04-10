@@ -76,6 +76,14 @@ body {
   overflow-x: auto;
   margin: 0.75em 0;
 }
+.prose-chat .inline-chart {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  margin: 1.25em 0;
+  background: var(--color-surface-alt);
+}
 .prose-chat table {
   width: 100%;
   border-collapse: collapse;

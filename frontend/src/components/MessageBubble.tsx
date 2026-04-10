@@ -84,6 +84,20 @@ function ImageArtifact({
   );
 }
 
+function InlineChartImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="inline-chart"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function ShareButton({
   message,
   userQuestion,
@@ -240,45 +254,75 @@ export default function MessageBubble({
           <p className="text-[0.95rem] leading-relaxed">{message.content}</p>
         ) : (
           <div className="prose-chat text-[0.95rem]">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                img: ({ src, alt }) => {
+                  const srcStr = typeof src === "string" ? src : "";
+                  const resolvedSrc = srcStr.startsWith("/artifacts/")
+                    ? `${BACKEND_URL}${srcStr}`
+                    : srcStr;
+                  return (
+                    <InlineChartImage
+                      src={resolvedSrc || ""}
+                      alt={alt || ""}
+                    />
+                  );
+                },
+              }}
+            >
               {message.content}
             </ReactMarkdown>
           </div>
         )}
 
-        {message.artifacts && message.artifacts.length > 0 && (
-          <div className="mt-4 space-y-3">
-            {message.artifacts.filter((a): a is string => typeof a === "string" && a.length > 0).map((artifact, i) => {
-              const artifactUrl = `${BACKEND_URL}${artifact}`;
-              const artifactName = getArtifactName(artifact);
+        {message.artifacts && message.artifacts.length > 0 && (() => {
+          // Find artifact paths already embedded inline in the markdown
+          const inlineRefs = new Set(
+            (message.content.match(/!\[.*?\]\((\/artifacts\/[^)]+)\)/g) || [])
+              .map((m) => m.match(/\((\/artifacts\/[^)]+)\)/)?.[1])
+              .filter((p): p is string => !!p),
+          );
+          const remaining = message.artifacts
+            .filter((a): a is string => typeof a === "string" && a.length > 0)
+            .filter((a) => !inlineRefs.has(a));
 
-              if (isImageArtifact(artifact)) {
+          if (remaining.length === 0) return null;
+
+          return (
+            <div className="mt-4 space-y-3">
+              {remaining.map((artifact, i) => {
+                const artifactUrl = `${BACKEND_URL}${artifact}`;
+                const artifactName = getArtifactName(artifact);
+
+                if (isImageArtifact(artifact)) {
+                  return (
+                    <ImageArtifact
+                      key={i}
+                      artifactUrl={artifactUrl}
+                      artifactName={artifactName}
+                    />
+                  );
+                }
+
                 return (
-                  <ImageArtifact
+                  <a
                     key={i}
-                    artifactUrl={artifactUrl}
-                    artifactName={artifactName}
-                  />
+                    href={artifactUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3 text-sm hover:border-[var(--color-coral)]"
+                  >
+                    <span className="font-medium text-[var(--color-navy)]">
+                      {artifactName}
+                    </span>
+                    <span className="text-[var(--color-gray-warm)]">Open file</span>
+                  </a>
                 );
-              }
-
-              return (
-                <a
-                  key={i}
-                  href={artifactUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-4 py-3 text-sm hover:border-[var(--color-coral)]"
-                >
-                  <span className="font-medium text-[var(--color-navy)]">
-                    {artifactName}
-                  </span>
-                  <span className="text-[var(--color-gray-warm)]">Open file</span>
-                </a>
-              );
-            })}
-          </div>
-        )}
+              })}
+            </div>
+          );
+        })()}
 
         {!isUser && (
           <ShareButton message={message} userQuestion={userQuestion} />
