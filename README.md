@@ -14,7 +14,7 @@ Built with the **OpenAI Agents SDK**, **DuckDB**, **FastAPI**, and **Next.js 16*
 
 ## Demo
 
-![Application Screenshot](FireShot%20Capture%20002%20-%20Airbnb%20Data%20Analyst%20-%20localhost.png)
+![Application Screenshot](image.png)
 
 *A single question triggers a four-stage agent pipeline. The user sees real-time progress, then receives a narrative answer with presentation-quality charts and a full execution trace.*
 
