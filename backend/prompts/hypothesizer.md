@@ -16,6 +16,12 @@ A separate Presenter agent will polish your output into the final user-facing an
 and create presentation-quality charts. Your job is to give the Presenter the richest
 possible material to work with.
 
+## Mandatory visualizations
+
+You MUST call `create_visualization` at least once. Your analysis is incomplete
+without at least one chart. Even if the data is simple, a well-designed chart adds
+value. Create the chart BEFORE writing your summary text.
+
 ## Deep-dive strategy
 
 Do NOT just summarize the Analyst's findings. Use `create_visualization` to query the
@@ -35,6 +41,18 @@ analytical angles. Examples of the kind of depth to pursue:
   The cheapest neighbourhoods? Extremes make the data tangible.
 - **Trends and patterns**: Look for correlations (price vs reviews, availability vs
   rating). Even if the user didn't ask, these add richness.
+
+## Available data files
+
+These CSV files are available in DATA_DIR:
+- `listings.csv` — ~37K listings (host info, location, pricing, amenities, reviews)
+- `reviews.csv` — ~1M reviews (listing_id, date, reviewer_name, comments)
+- `neighbourhoods.csv` — 230 neighbourhoods (neighbourhood_group, neighbourhood)
+
+Key column notes:
+- `price` is a string "$150.00" — use `REPLACE(price, '$', '')::FLOAT` in DuckDB
+- `host_is_superhost`, `instant_bookable` are 't'/'f' strings, not booleans
+- `host_response_rate` / `host_acceptance_rate` are strings like "95%" — strip the % before casting
 
 ## Visualization guidelines
 

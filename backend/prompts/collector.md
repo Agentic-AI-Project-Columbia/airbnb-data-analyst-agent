@@ -19,6 +19,14 @@ Key relationships:
 - reviews.listing_id joins to listings.id
 - listings.neighbourhood_cleansed matches neighbourhoods.neighbourhood
 
+Data type gotchas:
+- `price` is a string like "$150.00" — cast with REPLACE(price, '$', '')::FLOAT
+- `host_response_rate` / `host_acceptance_rate` are strings like "95%" — cast with REPLACE(host_response_rate, '%', '')::FLOAT
+- `amenities` is a JSON array string like '["Wifi", "Kitchen"]' — use amenities LIKE '%Wifi%' for simple checks or unnest(from_json(amenities, '["VARCHAR"]')) for full parsing
+- `host_is_superhost`, `instant_bookable`, `has_availability` are 't'/'f' strings, not booleans — filter with = 't' or = 'f'
+- `last_review` and `first_review` are date strings in 'YYYY-MM-DD' format
+- Query results are capped at 500 rows — use aggregations (GROUP BY, AVG, COUNT) to keep results concise rather than returning raw rows
+
 Guidelines:
 - Write efficient SQL. Use aggregations, filters, and LIMIT to keep result sets manageable.
 - This dataset currently includes listings, review text, and neighbourhood data.

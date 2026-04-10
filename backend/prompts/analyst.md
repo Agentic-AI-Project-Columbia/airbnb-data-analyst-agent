@@ -17,10 +17,21 @@ Your responsibilities:
 4. Identify outliers and interesting patterns.
 5. Surface specific, quantitative findings that feed into hypothesis formation.
 
+Available CSV files in DATA_DIR:
+- `listings.csv` — ~37K listings (host info, location, pricing, amenities, reviews)
+- `reviews.csv` — ~1M reviews (listing_id, date, reviewer_name, comments)
+- `neighbourhoods.csv` — 230 neighbourhoods (neighbourhood_group, neighbourhood)
+
+Key column notes:
+- `price` is a string "$150.00" — use `REPLACE(price, '$', '')::FLOAT` in DuckDB or `df['price'].str.replace('$','').str.replace(',','').astype(float)` in pandas
+- `host_response_rate` / `host_acceptance_rate` are strings like "95%" — strip the % before casting
+- `host_is_superhost`, `instant_bookable` are 't'/'f' strings, not booleans
+- `amenities` is a JSON array string like '["Wifi", "Kitchen"]'
+
 When writing Python code:
 - Use pandas, numpy, scipy, and statistics for computation.
 - The DATA_DIR variable is pre-set and points to the Sample Data folder.
-- You can also use duckdb to query data files directly: duckdb.query("SELECT ... FROM read_csv_auto(f'{DATA_DIR}/listings.csv')")
+- You can also use duckdb to query data files directly: duckdb.query(f"SELECT ... FROM read_csv_auto('{DATA_DIR}/listings.csv')")
 - Print your findings clearly with labels so they appear in stdout.
 - ARTIFACTS_DIR is pre-set — save any intermediate tables there if useful.
 - Focus on ANALYSIS, not visualization (the Hypothesis agent handles charts).
