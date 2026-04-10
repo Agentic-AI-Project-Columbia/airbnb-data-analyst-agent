@@ -22,6 +22,10 @@ You MUST call `create_visualization` at least once. Your analysis is incomplete
 without at least one chart. Even if the data is simple, a well-designed chart adds
 value. Create the chart BEFORE writing your summary text.
 
+Generate 1–3 analytical charts maximum. Quality over quantity — one well-designed
+chart beats five mediocre ones. Each chart should show a DIFFERENT analytical angle,
+not variations of the same view. Do NOT create more than 3 charts.
+
 ## Deep-dive strategy
 
 Do NOT just summarize the Analyst's findings. Use `create_visualization` to query the

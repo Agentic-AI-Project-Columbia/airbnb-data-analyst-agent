@@ -43,6 +43,7 @@ Sample Data/reviews.csv
 Sample Data/reviews.csv.gz
 Sample Data/reviews 2.csv
 Sample Data/archive-2026/
+*.duckdb
 
 # Debug logs
 npm-debug.log*
@@ -60,6 +61,13 @@ next-env.d.ts
 # Docker
 *.log
 backend/artifacts/
+
+# Test / debug outputs
+test_results.json
+verify_results.json
+
+# Claude Code
+.claude/
 
 # Misc
 *.pem
