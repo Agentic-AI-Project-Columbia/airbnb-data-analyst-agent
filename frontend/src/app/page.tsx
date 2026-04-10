@@ -8,6 +8,10 @@ import MessageBubble, {
   type TraceStep,
 } from "@/components/MessageBubble";
 import WaitingGame from "@/components/WaitingGame";
+import PipelineFlowchart from "@/components/PipelineFlowchart";
+import DataOverview from "@/components/DataOverview";
+import SchemaExplorer from "@/components/SchemaExplorer";
+import { getStageForAgent } from "@/lib/pipeline-stages";
 import type { TableSchema } from "@/components/SqlQueryBlock";
 
 const BACKEND_URL =
@@ -55,13 +59,62 @@ function getStatusFromTraceStep(step: TraceStep): {
   return null;
 }
 
+const SUGGESTED_QUESTIONS = [
+  {
+    category: "Pricing",
+    question:
+      "Which neighbourhoods have the highest average prices for entire homes?",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+    ),
+  },
+  {
+    category: "Comparison",
+    question:
+      "Compare Manhattan vs Brooklyn by price, room type, and reviews.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <line x1="12" y1="3" x2="12" y2="21" />
+      </svg>
+    ),
+  },
+  {
+    category: "Features",
+    question: "Which features are most common in high-priced listings?",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    ),
+  },
+  {
+    category: "Reviews",
+    question:
+      "What review themes appear most often in top-rated listings?",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+];
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [answered, setAnswered] = useState(false);
   const [schema, setSchema] = useState<Record<string, TableSchema> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const traceRef = useRef<TraceStep[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
+  const [pipelineProgress, setPipelineProgress] = useState<{
+    active: string | null;
+    completed: Set<string>;
+  }>({ active: null, completed: new Set() });
 
   useEffect(() => {
     fetch(`${BACKEND_URL}/api/schema`)
@@ -112,18 +165,20 @@ export default function Home() {
     []
   );
 
+  const handleReset = useCallback(() => {
+    setMessages([]);
+    setAnswered(false);
+    setLoading(false);
+    setPipelineProgress({ active: null, completed: new Set() });
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+  }, []);
+
   const handleSend = useCallback(
     async (question: string) => {
       const startedAt = Date.now() / 1000;
-      const history = messages
-        .filter(
-          (message) =>
-            message.role === "user" || message.role === "assistant"
-        )
-        .map((message) => ({
-          role: message.role,
-          content: message.content,
-        }));
 
       const userMsg: Message = {
         id: Date.now().toString(),
@@ -152,7 +207,7 @@ export default function Home() {
         socketRef.current = socket;
 
         socket.onopen = () => {
-          socket.send(JSON.stringify({ question, history }));
+          socket.send(JSON.stringify({ question, history: [] }));
         };
 
         socket.onmessage = (event) => {
@@ -175,6 +230,25 @@ export default function Home() {
 
           if (payload.type === "trace" && payload.step) {
             traceRef.current = [...traceRef.current, payload.step as TraceStep];
+
+            // Update pipeline flowchart progress
+            const step = payload.step as TraceStep;
+            if (step.type === "agent_start" || step.type === "handoff") {
+              const agentName = step.agent || step.target;
+              if (agentName) {
+                const matchedStage = getStageForAgent(agentName);
+                if (matchedStage) {
+                  setPipelineProgress((prev) => {
+                    const newCompleted = new Set(prev.completed);
+                    if (prev.active && prev.active !== matchedStage.key) {
+                      newCompleted.add(prev.active);
+                    }
+                    return { active: matchedStage.key, completed: newCompleted };
+                  });
+                }
+              }
+            }
+
             const statusUpdate = getStatusFromTraceStep(payload.step as TraceStep);
             if (statusUpdate) {
               setMessages((prev) =>
@@ -207,6 +281,8 @@ export default function Home() {
               trace,
             });
             setLoading(false);
+            setAnswered(true);
+            setPipelineProgress({ active: null, completed: new Set() });
             socket.close();
             return;
           }
@@ -219,6 +295,8 @@ export default function Home() {
               content: `**Error:** ${payload.content || "Something went wrong"}`,
             });
             setLoading(false);
+            setAnswered(true);
+            setPipelineProgress({ active: null, completed: new Set() });
             socket.close();
           }
         };
@@ -246,57 +324,62 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [addMessage, buildFallbackTrace, messages]
+    [addMessage, buildFallbackTrace]
   );
+
+  const userQuestion = messages.find((m) => m.role === "user")?.content;
 
   return (
     <div className="flex flex-col h-screen">
-      <Header />
+      <Header answered={answered} onReset={handleReset} />
 
       <main className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto px-6 py-4">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-              <div className="w-16 h-16 gradient-coral rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 3v18h18" />
-                  <path d="M7 16l4-8 4 4 4-10" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-[var(--color-navy)] mb-2">
-                What would you like to explore?
-              </h2>
-              <p className="text-[var(--color-gray-warm)] max-w-md mb-2 text-[0.95rem]">
-                Explore pricing, neighbourhood patterns, listing features, and
-                review text from the NYC Airbnb dataset. Ask a practical
-                analysis question and the system will return findings with
-                supporting visuals.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 mt-2 text-xs text-[var(--color-gray-warm)]">
-                <span className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
-                  37K+ listings
-                </span>
-                <span className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
-                  neighbourhood insights
-                </span>
-                <span className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
-                  1M+ reviews
-                </span>
+            <div className="landing-content">
+              <DataOverview schema={schema} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SchemaExplorer schema={schema} />
+
+                <div>
+                  <h3 className="text-xs font-semibold text-[var(--color-navy)] mb-2 uppercase tracking-wider">
+                    Try a Question
+                  </h3>
+                  <div className="space-y-1.5">
+                    {SUGGESTED_QUESTIONS.map((sq, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(sq.question)}
+                        disabled={loading}
+                        className="suggested-question-card group w-full text-left px-3 py-2.5 rounded-xl bg-white border border-[var(--color-border)] hover:border-[var(--color-coral)] hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="text-[var(--color-coral)] opacity-70 group-hover:opacity-100 transition-opacity">
+                            {sq.icon}
+                          </span>
+                          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-coral)]">
+                            {sq.category}
+                          </span>
+                        </div>
+                        <p className="text-[0.8rem] text-[var(--color-navy)] leading-snug">
+                          {sq.question}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} schema={schema} />
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  schema={schema}
+                  userQuestion={userQuestion}
+                />
               ))}
             </div>
           )}
@@ -305,11 +388,20 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-[var(--color-border)] bg-white/80 backdrop-blur-md">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <ChatInput onSend={handleSend} disabled={loading} />
-        </div>
-      </footer>
+      {loading && (
+        <PipelineFlowchart
+          activeStage={pipelineProgress.active}
+          completedStages={pipelineProgress.completed}
+        />
+      )}
+
+      {!answered && (
+        <footer className="border-t border-[var(--color-border)] bg-white/80 backdrop-blur-md">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <ChatInput onSend={handleSend} disabled={loading} />
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

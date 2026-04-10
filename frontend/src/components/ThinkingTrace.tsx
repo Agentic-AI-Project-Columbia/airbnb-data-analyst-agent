@@ -5,58 +5,9 @@ import type { TraceStep } from "./MessageBubble";
 import type { TableSchema } from "./SqlQueryBlock";
 import SqlQueryBlock from "./SqlQueryBlock";
 import QueryResultSummary from "./QueryResultSummary";
+import { STAGES, getStageForAgent, type StageInfo } from "@/lib/pipeline-stages";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
-/* ── Stage definitions ── */
-
-type StageInfo = {
-  key: string;
-  label: string;
-  agent: string;
-  color: string;
-  borderColor: string;
-  bgColor: string;
-};
-
-const STAGES: StageInfo[] = [
-  {
-    key: "collect",
-    label: "Collect",
-    agent: "Data Collector",
-    color: "var(--color-teal)",
-    borderColor: "var(--color-teal)",
-    bgColor: "rgba(0, 166, 153, 0.04)",
-  },
-  {
-    key: "analyze",
-    label: "Analyze",
-    agent: "EDA Analyst",
-    color: "#6C5CE7",
-    borderColor: "#6C5CE7",
-    bgColor: "rgba(108, 92, 231, 0.04)",
-  },
-  {
-    key: "synthesize",
-    label: "Synthesize",
-    agent: "Hypothesis Generator",
-    color: "var(--color-coral)",
-    borderColor: "var(--color-coral)",
-    bgColor: "rgba(255, 90, 95, 0.04)",
-  },
-  {
-    key: "present",
-    label: "Present",
-    agent: "Presenter",
-    color: "#E17055",
-    borderColor: "#E17055",
-    bgColor: "rgba(225, 112, 85, 0.04)",
-  },
-];
-
-function getStageForAgent(agentName: string): StageInfo | undefined {
-  return STAGES.find((s) => s.agent === agentName);
-}
 
 /* ── Helpers ── */
 
@@ -265,6 +216,32 @@ function ExecutionStatus({ step }: { step: TraceStep }) {
   return null;
 }
 
+const MSG_PREVIEW_LIMIT = 300;
+
+function AgentMessage({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = content.length > MSG_PREVIEW_LIMIT;
+  const display = expanded || !isLong ? content : content.slice(0, MSG_PREVIEW_LIMIT) + "...";
+
+  return (
+    <div className="text-[0.8rem] leading-relaxed pl-1">
+      <div
+        className="italic text-[var(--color-gray-warm)] whitespace-pre-wrap"
+      >
+        {display}
+      </div>
+      {isLong && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-[0.75rem] text-[var(--color-teal)] hover:text-[var(--color-teal-dark)] font-medium mt-1 cursor-pointer"
+        >
+          {expanded ? "Show less" : "Show full reasoning"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function StageCard({
   group,
   schema,
@@ -368,9 +345,7 @@ function StageCard({
 
           {/* Agent messages — findings / reasoning */}
           {messages.map((msg, i) => (
-            <div key={`msg-${i}`} className="text-[0.8rem] text-[var(--color-navy)] leading-relaxed pl-1">
-              {msg.content}
-            </div>
+            <AgentMessage key={`msg-${i}`} content={msg.content || ""} />
           ))}
 
           {/* Inline artifact thumbnails */}

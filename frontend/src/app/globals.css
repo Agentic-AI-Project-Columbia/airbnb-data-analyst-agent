@@ -283,10 +283,66 @@ body {
   }
 }
 
+/* ── Pipeline Flowchart ── */
+
+@keyframes pipelineNodePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.pipeline-node-active {
+  animation: pipelineNodePulse 1.8s ease-in-out infinite;
+}
+
 /* Hypothesis box */
 .hypothesis-box {
   background: rgba(255, 90, 95, 0.06);
   border: 1px solid rgba(255, 90, 95, 0.15);
   border-radius: 8px;
   padding: 12px 16px;
+}
+
+/* ── Schema Explorer ── */
+
+.schema-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.schema-card:hover {
+  border-color: var(--color-coral);
+  box-shadow: 0 2px 12px rgba(255, 90, 95, 0.08);
+}
+
+.schema-card-body {
+  border-top: 1px solid var(--color-border);
+  animation: slideDown 0.2s ease-out;
+}
+
+/* ── Suggested Question Cards ── */
+
+.suggested-question-card:active {
+  transform: scale(0.98);
+}
+
+/* ── Share Button ── */
+
+.share-btn {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.share-btn:hover svg {
+  stroke: var(--color-coral);
+}
+
+/* ── Landing Content ── */
+
+.landing-content {
+  animation: fadeInUp 0.5s ease-out forwards;
 }

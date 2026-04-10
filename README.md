@@ -1,8 +1,31 @@
 # Airbnb Multi-Agent Data Analyst
 
-A multi-agent system that performs the full data analysis lifecycle on NYC Airbnb data: **Collect**, **Explore (EDA)**, **Hypothesize**, and **Present**.
+A production-grade, multi-agent data analysis system that turns natural language questions about NYC Airbnb data into polished, insight-driven reports with visualizations — fully automated from query to presentation.
 
-Built with the **OpenAI Agents SDK**, **DuckDB**, **FastAPI**, and **Next.js**.
+Built with the **OpenAI Agents SDK**, **DuckDB**, **FastAPI**, and **Next.js 16**. Deployed on **Google Cloud Run**.
+
+**Stack:** Python 3.12 | TypeScript | React 19 | Tailwind CSS 4 | WebSocket | Docker
+
+---
+
+## Demo
+
+![Application Screenshot](FireShot%20Capture%20002%20-%20Airbnb%20Data%20Analyst%20-%20localhost.png)
+
+*A single question triggers a four-stage agent pipeline. The user sees real-time progress, then receives a narrative answer with presentation-quality charts and a full execution trace.*
+
+---
+
+## What This Project Does
+
+A user types a question like *"Which neighbourhoods have the highest prices for entire homes?"* and the system:
+
+1. **Translates** the question into SQL and queries a 37K-row listings dataset via DuckDB
+2. **Analyzes** the results with dynamically generated Python (pandas, scipy, numpy)
+3. **Hypothesizes** — forms data-grounded conclusions and generates analytical charts
+4. **Presents** — rewrites everything into a polished briefing with annotated, publication-ready visualizations
+
+All four stages run autonomously. Each agent writes its own code, executes it in a sandboxed subprocess, inspects the output, and passes structured context to the next stage. The frontend streams every step in real time over WebSocket.
 
 ---
 
@@ -10,123 +33,151 @@ Built with the **OpenAI Agents SDK**, **DuckDB**, **FastAPI**, and **Next.js**.
 
 ```
 User Question
-     │
-     ▼
-┌─────────────┐
-│ Orchestrator │ ─── coordinates the pipeline
-└──────┬──────┘
-       │
-       ├──► Data Collector ──► DuckDB (SQL on CSVs)
-       │         │
-       │         ▼ (query results)
-       ├──► EDA Analyst ──► Python Code Executor
-       │         │
-       │         ▼ (statistical findings)
-       ├──► Hypothesis Generator ──► Python Code Executor (analytical charts)
-       │         │
-       │         ▼ (hypothesis + evidence)
-       └──► Presenter ──► Python Code Executor (presentation charts)
-                  │
-                  ▼
+     |
+     v
++--------------+
+| Orchestrator | --- coordinates the pipeline
++------+-------+
+       |
+       +---> Data Collector ---> DuckDB (SQL on CSVs)
+       |          |
+       |          v  (query results)
+       +---> EDA Analyst ---> Python Code Executor
+       |          |
+       |          v  (statistical findings)
+       +---> Hypothesis Generator ---> Python Code Executor (analytical charts)
+       |          |
+       |          v  (hypothesis + evidence)
+       +---> Presenter ---> Python Code Executor (presentation charts)
+                  |
+                  v
          Polished Answer + Visualizations
 ```
 
-Five agents, three tools, one pipeline.
+**Five agents. Three tools. One pipeline.**
+
+Each agent is a distinct `Agent` object from the OpenAI Agents SDK with its own system prompt, tools, and structured output schema. The orchestrator hands off sequentially, threading each stage's output as context to the next.
 
 ---
 
-## The Pipeline
+## Key Technical Highlights
 
-### Step 1: Collect
-
-| What | Where |
-|------|-------|
-| Agent | `backend/agent_defs/collector.py` → `collector_agent` |
-| Tool | `backend/tools/sql_runner.py` → `run_sql()` |
-| Data Engine | DuckDB (in-memory, reads `.csv` and `.csv.gz` natively) |
-
-The **Data Collector** agent translates the user's question into one or more DuckDB SQL queries at runtime. It currently queries three registered views:
-
-- **listings** — about 37K listings with rich listing-level fields such as host metadata, location, property details, room type, price, amenities, availability fields, and review score columns
-- **reviews** — detailed review records with review IDs, reviewer metadata, dates, and free-text comments
-- **neighbourhoods** — NYC neighbourhood names and borough groupings
-
-The agent writes dynamic SQL with aggregations, filters, and joins tailored to each question. Results are returned as JSON.
-
-### Step 2: Explore / EDA
-
-| What | Where |
-|------|-------|
-| Agent | `backend/agent_defs/analyst.py` → `analyst_agent` |
-| Tool | `backend/tools/code_executor.py` → `execute_python()` |
-
-The **EDA Analyst** agent receives collected data and writes Python code (pandas, numpy, scipy, duckdb) that it executes at runtime. It computes statistics, segments data, identifies correlations and anomalies, and surfaces specific quantitative findings. Different questions produce different code and different analyses.
-
-### Step 3: Hypothesize
-
-| What | Where |
-|------|-------|
-| Agent | `backend/agent_defs/hypothesizer.py` → `hypothesizer_agent` |
-| Tool | `backend/tools/code_executor.py` → `execute_python()` |
-
-The **Hypothesis Generator** agent takes EDA findings and forms a data-grounded hypothesis. It writes Python code to generate analytical visualizations (saved as PNG) — detailed breakdowns, distributions, and correlations that support its reasoning.
-
-### Step 4: Present
-
-| What | Where |
-|------|-------|
-| Agent | `backend/agent_defs/presenter.py` → `presenter_agent` |
-| Tool | `backend/tools/code_executor.py` → `execute_python()` |
-
-The **Presenter** agent takes the full pipeline output and transforms it into a polished, visually rich briefing designed for non-technical users. It generates presentation-quality charts — annotated, clearly labeled, with insight-driven titles — and weaves them into a concise narrative. Think of it as the difference between analyst notes and a finished slide deck.
+| Area | Details |
+|------|---------|
+| **Agent Orchestration** | Handoff-based multi-agent coordination using the OpenAI Agents SDK — not simple function calling, but autonomous agents that write and execute arbitrary code |
+| **Dynamic Code Generation** | Agents write SQL and Python at runtime, tailored to each question. No templates or predefined queries |
+| **Sandboxed Execution** | Python runs in isolated subprocesses with a 120s timeout, restricted imports, and automatic artifact capture |
+| **Real-Time Streaming** | WebSocket streams every agent action (handoffs, tool calls, outputs) to the frontend as it happens |
+| **Execution Trace UI** | Expandable four-stage timeline showing SQL queries, Python code, data previews, and agent reasoning |
+| **Interactive Schema Explorer** | Frontend fetches live schema from DuckDB and lets users browse table structures before asking questions |
+| **Production Deployment** | Dockerized frontend + backend deployed to GCP Cloud Run via Cloud Build CI/CD pipeline |
+| **Type Safety** | Full TypeScript frontend with strict types; Pydantic models for backend data contracts |
 
 ---
 
-## Core Requirements
+## Implemented Features
 
-| Requirement | Implementation |
-|-------------|---------------|
-| **Frontend** | Next.js 16 app in `frontend/` — chat interface with markdown answers, inline chart display, and an expandable `Agent Thinking` trace panel |
-| **Agent Framework** | OpenAI Agents SDK (`openai-agents` package) — `Agent`, `function_tool`, `Runner.run()`, `handoffs` |
-| **Tool Calling** | `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (Python charts) |
-| **Non-trivial Dataset** | NYC Airbnb data from Inside Airbnb: a detailed listings table, a rich review-text table, and neighbourhood reference data |
-| **Multi-agent Pattern** | Orchestrator-handoff: `orchestrator_agent` hands off sequentially to `collector_agent` → `analyst_agent` → `hypothesizer_agent` → `presenter_agent` (see `backend/agent_defs/orchestrator.py`) |
-| **Deployed** | GCP Cloud Run (Docker containers for backend + frontend) |
-| **README** | This file |
+### Core Requirements
+
+| # | Requirement | Status | Implementation |
+|---|------------|--------|----------------|
+| 1 | **Frontend** | Done | Next.js 16 / React 19 app with real-time chat, markdown rendering, inline chart display, schema explorer, and agent trace panel |
+| 2 | **Agent Framework** | Done | OpenAI Agents SDK (`openai-agents`) — `Agent`, `function_tool`, `Runner.run_streamed()`, `handoffs` |
+| 3 | **Tool Calling** | Done | Three tools: `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (charts) |
+| 4 | **Non-Trivial Dataset** | Done | NYC Airbnb: 37K listings (71 columns), 985K reviews, 230 neighbourhoods |
+| 5 | **Multi-Agent Pattern** | Done | 5-agent orchestrator-handoff pipeline: Orchestrator -> Collector -> Analyst -> Hypothesizer -> Presenter |
+| 6 | **Deployment** | Done | GCP Cloud Run (Docker containers, Cloud Build CI/CD, Artifact Registry) |
+| 7 | **README** | Done | This file |
+
+### Elective Features (Grab Bag)
+
+| # | Feature | Points | Status | Where |
+|---|---------|--------|--------|-------|
+| 1 | **Code Execution** | 2.5 | Done | `backend/tools/code_executor.py` — sandboxed subprocess with artifact capture, 120s timeout, import restrictions |
+| 2 | **Data Visualization** | 2.5 | Done | Hypothesis Generator + Presenter agents write matplotlib/seaborn code to generate analytical and presentation-quality charts |
+| 3 | **Structured Output** | Bonus | Done | `backend/models/schemas.py` — Pydantic models (`QueryResult`, `EDAFindings`) for typed inter-agent data flow |
+| 4 | **Agent Thinking Trace** | Bonus | Done | `ThinkingTrace.tsx` — collapsible execution timeline with 4 stages, SQL/Python blocks, data previews, and timing |
+
+### Additional Features (Beyond Requirements)
+
+| Feature | Description |
+|---------|-------------|
+| **Real-Time WebSocket Streaming** | Every agent action streams to the frontend as it happens — no waiting for the full pipeline to finish |
+| **Pipeline Progress Flowchart** | Visual 4-stage progress indicator shows which agent is active during analysis |
+| **Interactive Schema Explorer** | Users can browse all table schemas (columns, types, row counts) before asking questions |
+| **Dataset Overview Dashboard** | Landing page shows live statistics pulled from DuckDB (row counts, column counts) |
+| **Share Button** | Copy analysis results (question + answer + chart links) to clipboard or share via Web Share API |
+| **Single Q&A Flow** | Clean question-answer UX with "New Question" reset to prevent stale context accumulation |
+| **Suggested Questions** | Curated questions with category labels guide users toward meaningful analysis |
+| **Memory Game** | Interactive waiting experience while the pipeline processes |
+| **Agent Retry on Failure** | Code execution failures trigger automatic re-attempts with error context |
+| **SQL Table Highlighting** | SQL queries in the trace highlight table names as clickable schema popovers |
 
 ---
 
-## Grab-Bag Electives
+## The Pipeline in Detail
 
-### 1. Code Execution (2.5 pts)
+### Stage 1: Collect
 
-| Where | `backend/tools/code_executor.py` → `execute_python()` |
-|-------|-------------------------------------------------------|
+| Component | Location |
+|-----------|----------|
+| Agent | `backend/agent_defs/collector.py` |
+| Tool | `backend/tools/sql_runner.py` -> `run_sql()` |
+| Engine | DuckDB (in-memory, reads CSVs natively) |
 
-The EDA Analyst, Hypothesis Generator, and Presenter agents write and execute arbitrary Python code at runtime. Code runs in a subprocess with access to pandas, numpy, scipy, matplotlib, seaborn, and duckdb. The executor captures stdout, stderr, exit code, and any saved artifacts (charts, CSVs).
+The Data Collector translates natural language into DuckDB SQL at runtime. It queries three registered views — **listings** (37K rows, 71 columns), **reviews** (985K rows), and **neighbourhoods** (230 rows) — with aggregations, filters, and joins tailored to each question.
 
-### 2. Data Visualization (2.5 pts)
+### Stage 2: Analyze (EDA)
 
-| Where | `backend/agent_defs/hypothesizer.py` + `backend/agent_defs/presenter.py` → `create_visualization` tool |
-|-------|--------------------------------------------------------------------------------------------------------|
+| Component | Location |
+|-----------|----------|
+| Agent | `backend/agent_defs/analyst.py` |
+| Tool | `backend/tools/code_executor.py` -> `execute_python()` |
 
-Both the Hypothesis Generator and Presenter write matplotlib/seaborn code that saves charts as PNG files to an artifacts directory. The Hypothesis Generator creates analytical charts (breakdowns, distributions); the Presenter creates presentation-quality visuals (annotated, insight-titled, designed for non-technical audiences). Charts are served via FastAPI's `StaticFiles` mount at `/artifacts/` and displayed inline in the frontend chat interface.
+The EDA Analyst writes and executes Python code (pandas, numpy, scipy, duckdb) to compute statistics, segment data, identify correlations, and surface quantitative findings. Different questions produce different code and different analyses.
 
-### 3. Structured Output (bonus)
+### Stage 3: Hypothesize
 
-| Where | `backend/models/schemas.py` → `QueryResult`, `EDAFindings` |
-|-------|-------------------------------------------------------------|
+| Component | Location |
+|-----------|----------|
+| Agent | `backend/agent_defs/hypothesizer.py` |
+| Tool | `backend/tools/code_executor.py` -> `execute_python()` |
 
-Pydantic models define structured schemas for query results and EDA findings, ensuring reliable data flow between agents.
+Takes EDA findings and forms data-grounded hypotheses. Writes matplotlib/seaborn code to generate analytical charts — breakdowns by dimension, distributions, comparisons, and outlier analysis. Charts saved as PNG artifacts.
 
-### 4. Agent Thinking Trace
+### Stage 4: Present
 
-| Where | `frontend/src/components/ThinkingTrace.tsx` + `backend/main.py` |
-|-------|----------------------------------------------------------------|
+| Component | Location |
+|-----------|----------|
+| Agent | `backend/agent_defs/presenter.py` |
+| Tool | `backend/tools/code_executor.py` -> `execute_python()` |
 
-Each assistant answer can expose an expandable `Agent Thinking` panel beneath the response. When available, the backend returns a step-by-step trace of agent handoffs, tool calls, tool outputs, and intermediate messages. The frontend renders that trace as a collapsible timeline with four stages (Collect → Analyze → Synthesize → Present) so you can inspect what happened under the hood for a given answer.
+Transforms the full pipeline output into a polished briefing for non-technical audiences. Generates presentation-quality charts with annotated values, insight-driven titles, and a professional color palette. Weaves visuals into a concise narrative.
 
-If a backend response does not include detailed trace data, the frontend falls back to a compact orchestration summary so the disclosure still explains how the answer was produced.
+---
+
+## Tech Stack
+
+### Backend
+- **Python 3.12** with FastAPI and Uvicorn (async)
+- **OpenAI Agents SDK** (`openai-agents >=0.7.0`) for agent orchestration
+- **DuckDB** for fast analytical SQL on CSV data
+- **pandas / numpy / scipy** for data analysis
+- **matplotlib / seaborn** for visualization
+- **Pydantic** for data validation and structured output
+- **uv** for fast dependency management
+
+### Frontend
+- **Next.js 16.2** with React 19 and TypeScript 5
+- **Tailwind CSS 4** for styling
+- **react-markdown** with remark-gfm for rich content rendering
+- **WebSocket** for real-time streaming
+
+### Infrastructure
+- **Docker** multi-stage builds for both services
+- **Google Cloud Run** for serverless deployment
+- **Cloud Build** for CI/CD pipeline
+- **Artifact Registry** for container images
 
 ---
 
@@ -136,7 +187,7 @@ If a backend response does not include detailed trace data, the frontend falls b
 
 - Python 3.11+
 - Node.js 20+
-- Either an OpenAI API key or an OpenRouter API key
+- An OpenAI API key or an OpenRouter API key
 
 ### Local Development
 
@@ -144,57 +195,60 @@ If a backend response does not include detailed trace data, the frontend falls b
 # 1. Clone and enter the project
 cd airbnb
 
-# 2. Backend setup
+# 2. Backend
 cd backend
-cp .env.example .env
-# Edit .env and add either OPENAI_API_KEY or OPENROUTER_API_KEY
-# Optional: set AGENT_MODEL if you want to override the default model
-# Defaults to gpt-4.1 (and uses the OpenAI-compatible provider path for OpenRouter)
-uv sync
-uv run python main.py
-# Backend runs at http://localhost:8000
+cp .env.example .env          # Add your OPENAI_API_KEY or OPENROUTER_API_KEY
+uv sync                       # Install dependencies
+uv run python main.py         # Starts at http://localhost:8000
 
-# 3. Frontend setup (new terminal)
+# 3. Frontend (new terminal)
 cd frontend
 npm install
-npm run dev
-# Frontend runs at http://localhost:3000
+npm run dev                   # Starts at http://localhost:3000
 ```
 
 ### Docker
 
 ```bash
-# Set one API key
+# Set your API key
 export OPENAI_API_KEY=sk-...
-# or
-export OPENROUTER_API_KEY=sk-or-...
+# or: export OPENROUTER_API_KEY=sk-or-...
 
-# Build and run
 docker-compose up --build
-
 # Frontend: http://localhost:3000
 # Backend:  http://localhost:8000
 ```
 
-### GCP Cloud Run Deployment
+### GCP Cloud Run
+
+The project includes a full Cloud Build pipeline (`cloudbuild.yaml`) that:
+1. Pulls data from a GCS bucket
+2. Builds and pushes both Docker images to Artifact Registry
+3. Deploys both services to Cloud Run with proper resource allocation
 
 ```bash
-# Build and push backend
-cd backend
-gcloud builds submit --tag gcr.io/PROJECT_ID/airbnb-backend
-gcloud run deploy airbnb-backend \
-  --image gcr.io/PROJECT_ID/airbnb-backend \
-  --set-env-vars OPENAI_API_KEY=sk-... \
-  --allow-unauthenticated
-
-# Build and push frontend
-cd ../frontend
-gcloud builds submit --tag gcr.io/PROJECT_ID/airbnb-frontend
-gcloud run deploy airbnb-frontend \
-  --image gcr.io/PROJECT_ID/airbnb-frontend \
-  --set-env-vars NEXT_PUBLIC_BACKEND_URL=https://airbnb-backend-xxx.run.app \
-  --allow-unauthenticated
+gcloud builds submit --config=cloudbuild.yaml
 ```
+
+---
+
+## API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/api/schema` | GET | Returns DuckDB schema (tables, columns, types, row counts) |
+| `/api/analyze` | POST | Synchronous analysis — `{"question": "...", "history": [...]}` |
+| `/ws/analyze` | WebSocket | Streaming analysis with real-time trace events |
+
+### WebSocket Message Types
+
+| Type | Direction | Description |
+|------|-----------|-------------|
+| `status` | Server -> Client | Progress update with agent name |
+| `trace` | Server -> Client | Agent execution step (handoff, tool call, output) |
+| `result` | Server -> Client | Final answer with markdown content and artifact paths |
+| `error` | Server -> Client | Error message |
 
 ---
 
@@ -202,48 +256,73 @@ gcloud run deploy airbnb-frontend \
 
 ```
 airbnb/
-├── backend/
-│   ├── main.py                    # FastAPI app, HTTP + WebSocket endpoints
-│   ├── agent_defs/
-│   │   ├── orchestrator.py        # Orchestrator agent (handoff routing)
-│   │   ├── collector.py           # Data Collector agent + query_database tool
-│   │   ├── analyst.py             # EDA Analyst agent + run_analysis_code tool
-│   │   ├── hypothesizer.py        # Hypothesis agent + create_visualization tool
-│   │   └── presenter.py           # Presenter agent + create_visualization tool
-│   ├── tools/
-│   │   ├── sql_runner.py          # DuckDB connection, view registration, SQL execution
-│   │   └── code_executor.py       # Sandboxed Python execution with artifact capture
-│   ├── models/
-│   │   └── schemas.py             # Pydantic structured output models
-│   ├── artifacts/                 # Generated charts and outputs (runtime)
-│   ├── pyproject.toml
-│   ├── uv.lock
-│   ├── Dockerfile
-│   └── .env.example
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx         # Root layout
-│   │   │   ├── page.tsx           # Main chat page
-│   │   │   └── globals.css        # Styles
-│   │   └── components/
-│   │       ├── Header.tsx         # App header
-│   │       ├── ChatInput.tsx      # Input with suggested questions
-│   │       ├── MessageBubble.tsx  # Message renderer (markdown, charts, trace toggle)
-│   │       └── ThinkingTrace.tsx  # Expandable agent execution timeline
-│   ├── next.config.ts
-│   ├── Dockerfile
-│   └── package.json
-├── Sample Data/                   # NYC Airbnb data files used by the app
-│   ├── listings.csv               # Detailed listings dataset
-│   ├── neighbourhoods.csv         # Neighbourhood names and boroughs
-│   └── reviews.csv                # Rich review dataset with comments
-├── docker-compose.yml
-└── README.md
+|-- backend/
+|   |-- main.py                    # FastAPI app, HTTP + WebSocket endpoints, pipeline orchestration
+|   |-- agent_defs/
+|   |   |-- orchestrator.py        # Orchestrator agent (handoff routing)
+|   |   |-- collector.py           # Data Collector agent + query_database tool
+|   |   |-- analyst.py             # EDA Analyst agent + run_analysis_code tool
+|   |   |-- hypothesizer.py        # Hypothesis Generator agent + create_visualization tool
+|   |   |-- presenter.py           # Presenter agent + create_visualization tool
+|   |   +-- config.py              # Model configuration (OpenAI / OpenRouter)
+|   |-- tools/
+|   |   |-- sql_runner.py          # DuckDB connection, view registration, SQL execution
+|   |   +-- code_executor.py       # Sandboxed Python execution with artifact capture
+|   |-- models/
+|   |   +-- schemas.py             # Pydantic structured output models
+|   |-- artifacts/                 # Generated charts and outputs (runtime)
+|   |-- Dockerfile
+|   |-- pyproject.toml
+|   +-- .env.example
+|-- frontend/
+|   |-- src/
+|   |   |-- app/
+|   |   |   |-- layout.tsx         # Root layout with fonts
+|   |   |   |-- page.tsx           # Main page — landing, Q&A flow, WebSocket logic
+|   |   |   +-- globals.css        # Design system and animations
+|   |   |-- components/
+|   |   |   |-- Header.tsx          # App header with New Question button
+|   |   |   |-- ChatInput.tsx       # Text input with send button
+|   |   |   |-- MessageBubble.tsx   # Message renderer (markdown, charts, share, trace)
+|   |   |   |-- ThinkingTrace.tsx   # Expandable agent execution timeline
+|   |   |   |-- PipelineFlowchart.tsx # Visual pipeline progress indicator
+|   |   |   |-- DataOverview.tsx    # Dataset statistics dashboard
+|   |   |   |-- SchemaExplorer.tsx  # Interactive table schema browser
+|   |   |   |-- SqlQueryBlock.tsx   # SQL display with clickable table names
+|   |   |   |-- QueryResultSummary.tsx # Data preview tables in trace
+|   |   |   +-- WaitingGame.tsx     # Memory game during analysis
+|   |   +-- lib/
+|   |       +-- pipeline-stages.ts  # Stage definitions and agent-to-stage mapping
+|   |-- Dockerfile
+|   +-- package.json
+|-- Sample Data/
+|   |-- listings.csv               # ~37K listings, 71 columns (~85 MB)
+|   |-- reviews.csv                # ~985K reviews, 6 columns (~295 MB)
+|   +-- neighbourhoods.csv         # 230 neighbourhoods, 2 columns
+|-- docker-compose.yml
+|-- cloudbuild.yaml                # GCP Cloud Build CI/CD pipeline
++-- README.md
 ```
 
 ---
 
-## Data Source
+## Dataset
 
-[Inside Airbnb](http://insideairbnb.com/) — New York City, scraped February 2026. The app currently uses a detailed listings export, a rich review-text dataset, and neighbourhood reference data. Calendar data is excluded from the active analysis flow in the current configuration.
+[Inside Airbnb](http://insideairbnb.com/) — New York City (2022 scrape).
+
+| Table | Rows | Columns | Description |
+|-------|------|---------|-------------|
+| **listings** | ~37,000 | 71 | Host info, location, property type, room type, pricing, amenities, availability, review scores |
+| **reviews** | ~985,000 | 6 | Review ID, listing ID, date, reviewer info, free-text comments |
+| **neighbourhoods** | 230 | 2 | Neighbourhood names mapped to boroughs (Manhattan, Brooklyn, Queens, Bronx, Staten Island) |
+
+---
+
+## Skills Demonstrated
+
+- **Agentic AI system design** — multi-agent orchestration with handoffs, context threading, and autonomous code generation
+- **Full-stack development** — Python backend + TypeScript/React frontend with real-time WebSocket communication
+- **Data engineering** — DuckDB analytical queries, pandas pipelines, automated visualization generation
+- **Production deployment** — Dockerized microservices on GCP Cloud Run with CI/CD
+- **Frontend engineering** — React 19, streaming UI updates, interactive schema explorer, responsive design
+- **System design** — clean separation of concerns, sandboxed execution, structured inter-agent contracts, error recovery

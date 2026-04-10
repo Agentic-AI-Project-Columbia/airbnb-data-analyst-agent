@@ -196,7 +196,7 @@ def _finalize_trace(trace: list[dict], current_agent: str, final_output: str | N
         trace.append({
             "type": "message",
             "agent": current_agent,
-            "content": _safe_truncate(str(final_output), 500),
+            "content": str(final_output),
             "ts": time.time(),
         })
 
@@ -285,7 +285,7 @@ async def _run_agent_stage(
                 step = {
                     "type": "tool_output",
                     "agent": current_agent,
-                    "output": _safe_truncate(output),
+                    "output": output,
                     "ts": time.time(),
                 }
                 # Try to extract structured metadata from tool output
@@ -314,7 +314,7 @@ async def _run_agent_stage(
                         {
                             "type": "message",
                             "agent": current_agent,
-                            "content": _safe_truncate(text, 500),
+                            "content": text,
                             "ts": time.time(),
                         },
                         websocket,

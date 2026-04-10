@@ -1,0 +1,122 @@
+"use client";
+
+import { STAGES } from "@/lib/pipeline-stages";
+
+type PipelineFlowchartProps = {
+  activeStage: string | null;
+  completedStages: Set<string>;
+};
+
+function CheckIcon({ color }: { color: string }) {
+  return (
+    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M3 8.5l3.5 3.5L13 4"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PulsingDot({ color }: { color: string }) {
+  return (
+    <span className="relative flex w-3 h-3 shrink-0">
+      <span
+        className="absolute inset-0 rounded-full opacity-40 animate-ping"
+        style={{ backgroundColor: color }}
+      />
+      <span
+        className="relative inline-flex w-3 h-3 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+    </span>
+  );
+}
+
+function GrayDot() {
+  return (
+    <span
+      className="w-2.5 h-2.5 rounded-full shrink-0"
+      style={{ backgroundColor: "var(--color-border)" }}
+    />
+  );
+}
+
+export default function PipelineFlowchart({
+  activeStage,
+  completedStages,
+}: PipelineFlowchartProps) {
+  return (
+    <div
+      className="fixed right-6 z-40 hidden sm:flex flex-col items-center
+                 bg-white/90 backdrop-blur-sm border border-[var(--color-border)]
+                 rounded-2xl shadow-lg animate-fade-in-up"
+      style={{ padding: "16px 20px", width: "156px", top: "50%", transform: "translateY(-50%)" }}
+    >
+      <p className="text-[0.6rem] uppercase tracking-[0.12em] text-[var(--color-gray-warm)] font-semibold mb-3">
+        Pipeline
+      </p>
+
+      {STAGES.map((stage, i) => {
+        const isCompleted = completedStages.has(stage.key);
+        const isActive = activeStage === stage.key;
+        const state = isCompleted ? "completed" : isActive ? "active" : "pending";
+
+        const nodeColor =
+          state === "pending" ? "var(--color-gray-warm)" : stage.color;
+        const nodeBorder =
+          state === "pending" ? "var(--color-border)" : stage.color;
+        const nodeBg =
+          state === "completed"
+            ? stage.bgColor
+            : state === "active"
+              ? stage.bgColor
+              : "transparent";
+
+        return (
+          <div key={stage.key} className="flex flex-col items-center w-full">
+            {/* Connector line above (skip for first node) */}
+            {i > 0 && (
+              <div
+                className="w-[2px] h-4 transition-colors duration-500"
+                style={{
+                  backgroundColor: completedStages.has(STAGES[i - 1].key)
+                    ? STAGES[i - 1].color
+                    : "var(--color-border)",
+                }}
+              />
+            )}
+
+            {/* Node */}
+            <div
+              className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-full border-[1.5px] transition-all duration-500 ${
+                state === "active" ? "pipeline-node-active" : ""
+              }`}
+              style={{
+                borderColor: nodeBorder,
+                background: nodeBg,
+              }}
+            >
+              {state === "completed" ? (
+                <CheckIcon color={stage.color} />
+              ) : state === "active" ? (
+                <PulsingDot color={stage.color} />
+              ) : (
+                <GrayDot />
+              )}
+              <span
+                className="text-[0.72rem] font-semibold truncate"
+                style={{ color: nodeColor }}
+              >
+                {stage.label}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -33,6 +33,9 @@ out/
 *.swo
 .DS_Store
 
+# Temporary build artifact (data copied here for Docker builds)
+backend/data/
+
 # Large data files (download separately — see README)
 Sample Data/calendar.csv
 Sample Data/listings.csv

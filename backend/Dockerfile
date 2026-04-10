@@ -8,10 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml ./
+COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev
 
 COPY . .
+
+# Bake sample data into image (Cloud Run has no volume mounts)
+COPY data/ /data/
+ENV DATA_DIR=/data
 
 EXPOSE 8000
 
