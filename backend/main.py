@@ -4,6 +4,7 @@ import json
 import time
 import asyncio
 import re
+import uuid
 
 from dotenv import load_dotenv
 
@@ -58,6 +59,9 @@ from agent_defs.presenter import presenter_agent
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "artifacts")
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
+SHARES_DIR = os.path.join(os.path.dirname(__file__), "shares")
+os.makedirs(SHARES_DIR, exist_ok=True)
+
 app = FastAPI(title="Airbnb Multi-Agent Analyst")
 
 app.add_middleware(
@@ -81,6 +85,42 @@ async def get_schema():
     """Return schema for all registered DuckDB views."""
     from tools.sql_runner import get_schema_json
     return get_schema_json()
+
+
+@app.post("/api/share")
+async def create_share(payload: dict):
+    """Save a conversation snapshot and return a share ID."""
+    question = payload.get("question", "")
+    answer = payload.get("answer", "")
+    if not question or not answer:
+        return JSONResponse(status_code=400, content={"error": "question and answer are required"})
+
+    share_id = uuid.uuid4().hex[:10]
+    share_data = {
+        "id": share_id,
+        "question": question,
+        "answer": answer,
+        "artifacts": payload.get("artifacts", []),
+        "trace": payload.get("trace", []),
+        "created_at": time.time(),
+    }
+
+    share_path = os.path.join(SHARES_DIR, f"{share_id}.json")
+    with open(share_path, "w") as f:
+        json.dump(share_data, f)
+
+    return {"id": share_id}
+
+
+@app.get("/api/share/{share_id}")
+async def get_share(share_id: str):
+    """Retrieve a shared conversation by ID."""
+    share_path = os.path.join(SHARES_DIR, f"{share_id}.json")
+    if not os.path.exists(share_path):
+        return JSONResponse(status_code=404, content={"error": "Share not found"})
+
+    with open(share_path, "r") as f:
+        return json.load(f)
 
 
 def _collect_artifacts() -> list[str]:
