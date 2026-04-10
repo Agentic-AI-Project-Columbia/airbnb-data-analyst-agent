@@ -16,22 +16,60 @@ from openai import AsyncOpenAI
 
 from agents import (
     ItemHelpers,
+    ModelProvider,
     MultiProvider,
+    OpenAIChatCompletionsModel,
     RunConfig,
     set_default_openai_client,
     set_tracing_disabled,
 )
 
+# ---------------------------------------------------------------------------
+# Provider setup: Vertex AI (GCP) > OpenRouter > Direct OpenAI
+# ---------------------------------------------------------------------------
+gcp_project = os.environ.get("GCP_PROJECT_ID")
+gcp_location = os.environ.get("GCP_LOCATION", "us-central1")
 openrouter_key = os.environ.get("OPENROUTER_API_KEY")
 openai_key = os.environ.get("OPENAI_API_KEY")
 
-if openrouter_key:
+MODEL_RUN_CONFIG = None  # will be set by whichever provider is configured
+
+if gcp_project:
+    import google.auth
+    import google.auth.transport.requests
+
+    creds, _ = google.auth.default()
+    creds.refresh(google.auth.transport.requests.Request())
+
+    vertex_client = AsyncOpenAI(
+        api_key=creds.token,
+        base_url=(
+            f"https://{gcp_location}-aiplatform.googleapis.com"
+            f"/v1beta1/projects/{gcp_project}/locations/{gcp_location}"
+            f"/endpoints/openapi"
+        ),
+    )
+
+    class _VertexProvider(ModelProvider):
+        """Routes all models through Vertex AI's Chat Completions endpoint."""
+        def get_model(self, model_name: str):
+            return OpenAIChatCompletionsModel(
+                model=model_name,
+                openai_client=vertex_client,
+            )
+
+    set_default_openai_client(vertex_client, use_for_tracing=False)
+    MODEL_RUN_CONFIG = RunConfig(model_provider=_VertexProvider())
+    set_tracing_disabled(True)
+    print(f"Using Vertex AI  (project={gcp_project}, location={gcp_location})")
+
+elif openrouter_key:
     openrouter_client = AsyncOpenAI(
         api_key=openrouter_key,
         base_url="https://openrouter.ai/api/v1",
     )
     set_default_openai_client(openrouter_client, use_for_tracing=False)
-    OPENROUTER_RUN_CONFIG = RunConfig(
+    MODEL_RUN_CONFIG = RunConfig(
         model_provider=MultiProvider(
             openai_client=openrouter_client,
             openai_prefix_mode="model_id",
@@ -39,11 +77,13 @@ if openrouter_key:
         )
     )
     set_tracing_disabled(True)
-else:
-    OPENROUTER_RUN_CONFIG = None
+    print("Using OpenRouter")
 
-if not openrouter_key and not openai_key:
-    print("WARNING: No OPENROUTER_API_KEY or OPENAI_API_KEY found in environment.")
+elif openai_key:
+    print("Using direct OpenAI")
+
+else:
+    print("WARNING: No GCP_PROJECT_ID, OPENROUTER_API_KEY, or OPENAI_API_KEY found.")
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,6 +104,17 @@ os.makedirs(SHARES_DIR, exist_ok=True)
 
 STAGE_TIMEOUT_SECONDS = 180    # 3 minutes per agent stage
 PIPELINE_TIMEOUT_SECONDS = 600  # 10 minutes total
+HEARTBEAT_INTERVAL = 30.0      # WebSocket keepalive interval
+
+
+async def _heartbeat(websocket: WebSocket) -> None:
+    """Send periodic heartbeat messages to keep the WebSocket alive."""
+    try:
+        while True:
+            await asyncio.sleep(HEARTBEAT_INTERVAL)
+            await websocket.send_json({"type": "heartbeat", "ts": time.time()})
+    except (asyncio.CancelledError, Exception):
+        pass
 
 app = FastAPI(title="Airbnb Multi-Agent Analyst")
 
@@ -140,6 +191,24 @@ def _collect_artifacts() -> list[str]:
 def _collect_new_artifacts(existing_artifacts: set[str]) -> list[str]:
     current_artifacts = set(_collect_artifacts())
     return sorted(current_artifacts - existing_artifacts)
+
+
+def _extract_artifacts_from_trace(trace: list[dict], start_index: int = 0) -> list[str]:
+    """Extract artifact paths from tool_output trace steps (no filesystem scanning)."""
+    artifacts: list[str] = []
+    seen: set[str] = set()
+    for step in trace[start_index:]:
+        if step.get("type") != "tool_output":
+            continue
+        step_artifacts = step.get("artifacts")
+        if not isinstance(step_artifacts, list):
+            continue
+        for art in step_artifacts:
+            path = art.get("path") if isinstance(art, dict) else art if isinstance(art, str) else None
+            if path and path not in seen:
+                seen.add(path)
+                artifacts.append(path)
+    return artifacts
 
 
 def _build_runner_input(question: str, history: list[dict] | None):
@@ -319,7 +388,7 @@ async def _run_agent_stage(
     result = Runner.run_streamed(
         agent,
         input=stage_input,
-        run_config=OPENROUTER_RUN_CONFIG,
+        run_config=MODEL_RUN_CONFIG,
     )
 
     async for event in result.stream_events():
@@ -510,9 +579,10 @@ async def _run_pipeline(
     history: list[dict] | None,
     trace: list[dict],
     websocket: WebSocket | None = None,
-) -> str:
+) -> tuple[str, list[str]]:
+    """Run the 4-stage pipeline. Returns (final_output, new_artifact_paths)."""
     resolved_request = _build_runner_input(question, history)
-    initial_artifacts = set(_collect_artifacts())
+    trace_start = len(trace)
 
     await _record_trace_step(
         trace,
@@ -589,8 +659,8 @@ async def _run_pipeline(
     )
 
     # Stage 4: Presentation
-    pre_presenter_artifacts = set(_collect_artifacts())
-    existing_chart_paths = sorted(pre_presenter_artifacts - initial_artifacts)
+    existing_chart_paths = _extract_artifacts_from_trace(trace, trace_start)
+    presenter_trace_start = len(trace)
 
     await _record_trace_step(
         trace,
@@ -616,7 +686,7 @@ async def _run_pipeline(
     )
 
     # Validation: if Presenter produced zero charts, retry once with a nudge
-    presenter_artifacts = _collect_new_artifacts(pre_presenter_artifacts)
+    presenter_artifacts = _extract_artifacts_from_trace(trace, presenter_trace_start)
     if not any(re.search(r'\.(png|jpe?g|svg)$', a, re.IGNORECASE) for a in presenter_artifacts):
         nudge_input = (
             presenter_input
@@ -633,7 +703,7 @@ async def _run_pipeline(
         )
 
     # Post-process: inject inline image references for any unreferenced charts
-    all_new_artifacts = _collect_new_artifacts(initial_artifacts)
+    all_new_artifacts = _extract_artifacts_from_trace(trace, trace_start)
     final_output = _inject_inline_images(final_output, all_new_artifacts)
 
     await _record_trace_step(
@@ -647,7 +717,7 @@ async def _run_pipeline(
         websocket,
     )
 
-    return final_output
+    return final_output, all_new_artifacts
 
 
 @app.post("/api/analyze")
@@ -659,16 +729,15 @@ async def analyze(payload: dict):
         return JSONResponse(status_code=400, content={"error": "No question provided"})
 
     try:
-        existing_artifacts = set(_collect_artifacts())
         trace: list[dict] = []
-        result = await asyncio.wait_for(
+        result, new_artifacts = await asyncio.wait_for(
             _run_pipeline(question, history, trace),
             timeout=PIPELINE_TIMEOUT_SECONDS,
         )
 
         return {
             "answer": result,
-            "artifacts": _collect_new_artifacts(existing_artifacts),
+            "artifacts": new_artifacts,
             "trace": _finalize_trace(trace, "Presenter", result),
         }
     except asyncio.TimeoutError:
@@ -700,17 +769,20 @@ async def websocket_analyze(websocket: WebSocket):
             })
 
             try:
-                existing_artifacts = set(_collect_artifacts())
                 trace: list[dict] = []
-                final_output = await asyncio.wait_for(
-                    _run_pipeline(question, history, trace, websocket),
-                    timeout=PIPELINE_TIMEOUT_SECONDS,
-                )
+                heartbeat_task = asyncio.create_task(_heartbeat(websocket))
+                try:
+                    final_output, new_artifacts = await asyncio.wait_for(
+                        _run_pipeline(question, history, trace, websocket),
+                        timeout=PIPELINE_TIMEOUT_SECONDS,
+                    )
+                finally:
+                    heartbeat_task.cancel()
 
                 await websocket.send_json({
                     "type": "result",
                     "content": final_output,
-                    "artifacts": _collect_new_artifacts(existing_artifacts),
+                    "artifacts": new_artifacts,
                 })
             except asyncio.TimeoutError:
                 await websocket.send_json({

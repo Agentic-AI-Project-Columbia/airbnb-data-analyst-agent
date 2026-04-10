@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ThinkingTrace from "./ThinkingTrace";
@@ -208,7 +208,7 @@ function ShareButton({
   );
 }
 
-export default function MessageBubble({
+function MessageBubbleInner({
   message,
   schema,
   userQuestion,
@@ -335,3 +335,6 @@ export default function MessageBubble({
     </div>
   );
 }
+
+const MessageBubble = memo(MessageBubbleInner);
+export default MessageBubble;

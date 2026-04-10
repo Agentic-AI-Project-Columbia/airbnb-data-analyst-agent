@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import type { TraceStep } from "./MessageBubble";
 import type { TableSchema } from "./SqlQueryBlock";
 import SqlQueryBlock from "./SqlQueryBlock";
@@ -384,7 +384,7 @@ function StageCard({
 
 /* ── Main component ── */
 
-export default function ThinkingTrace({
+function ThinkingTraceInner({
   steps,
   schema,
 }: {
@@ -395,9 +395,11 @@ export default function ThinkingTrace({
 
   if (steps.length === 0) return null;
 
-  const groups = groupStepsByStage(steps);
-  const totalDuration =
-    steps.length >= 2 ? steps[steps.length - 1].ts - steps[0].ts : 0;
+  const groups = useMemo(() => groupStepsByStage(steps), [steps]);
+  const totalDuration = useMemo(
+    () => (steps.length >= 2 ? steps[steps.length - 1].ts - steps[0].ts : 0),
+    [steps]
+  );
 
   return (
     <div className="mt-5 border-t border-[var(--color-border)] pt-4">
@@ -436,3 +438,6 @@ export default function ThinkingTrace({
     </div>
   );
 }
+
+const ThinkingTrace = memo(ThinkingTraceInner);
+export default ThinkingTrace;

@@ -2,8 +2,10 @@ import os
 import sys
 import json
 import uuid
-import subprocess
-import tempfile
+import io
+import threading
+import traceback
+import contextlib
 
 ARTIFACTS_DIR = os.environ.get(
     "ARTIFACTS_DIR",
@@ -20,8 +22,20 @@ ALLOWED_IMPORTS = {
 TIMEOUT_SECONDS = 120
 
 
+def _reset_matplotlib() -> None:
+    """Reset matplotlib state to avoid leaks between exec calls."""
+    try:
+        import matplotlib
+        import matplotlib.pyplot as plt
+        plt.close("all")
+        matplotlib.rcParams.update(matplotlib.rcParamsDefault)
+        matplotlib.use("Agg")
+    except Exception:
+        pass
+
+
 def execute_python(code: str) -> str:
-    """Run Python code in a subprocess and return stdout + list of saved artifacts."""
+    """Run Python code via exec() in an isolated namespace and return stdout + artifacts."""
     os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
     run_id = uuid.uuid4().hex[:8]
@@ -59,36 +73,51 @@ def execute_python(code: str) -> str:
     )
     full_code = preamble + code + postamble
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False, encoding="utf-8"
-    ) as tmp:
-        tmp.write(full_code)
-        tmp_path = tmp.name
+    stdout_capture = io.StringIO()
+    stderr_capture = io.StringIO()
+    exec_globals = {"__builtins__": __builtins__}
+    result = {"completed": False, "error": None}
 
-    try:
-        result = subprocess.run(
-            [sys.executable, tmp_path],
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_SECONDS,
-            cwd=os.path.dirname(tmp_path),
-        )
-        stdout = result.stdout[-8000:] if len(result.stdout) > 8000 else result.stdout
-        stderr = result.stderr[-4000:] if len(result.stderr) > 4000 else result.stderr
+    def _run():
+        try:
+            with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(stderr_capture):
+                exec(compile(full_code, f"<agent_code_{run_id}>", "exec"), exec_globals)
+            result["completed"] = True
+        except SystemExit as e:
+            result["completed"] = (e.code is None or e.code == 0)
+            if not result["completed"]:
+                stderr_capture.write(f"Script exited with code {e.code}\n")
+        except Exception:
+            stderr_capture.write(traceback.format_exc())
+            result["error"] = traceback.format_exc()
 
-        artifacts = []
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+    thread.join(timeout=TIMEOUT_SECONDS)
+
+    if thread.is_alive():
+        _reset_matplotlib()
+        return json.dumps({"error": f"Code execution timed out after {TIMEOUT_SECONDS}s"})
+
+    _reset_matplotlib()
+
+    stdout = stdout_capture.getvalue()
+    stderr = stderr_capture.getvalue()
+    stdout = stdout[-8000:] if len(stdout) > 8000 else stdout
+    stderr = stderr[-4000:] if len(stderr) > 4000 else stderr
+
+    exit_code = 0 if result["completed"] and not result["error"] else 1
+
+    artifacts = []
+    if os.path.isdir(run_artifacts_dir):
         for f in os.listdir(run_artifacts_dir):
             artifacts.append(
                 {"filename": f, "path": f"/artifacts/{run_id}/{f}"}
             )
 
-        return json.dumps({
-            "stdout": stdout,
-            "stderr": stderr,
-            "exit_code": result.returncode,
-            "artifacts": artifacts,
-        })
-    except subprocess.TimeoutExpired:
-        return json.dumps({"error": f"Code execution timed out after {TIMEOUT_SECONDS}s"})
-    finally:
-        os.unlink(tmp_path)
+    return json.dumps({
+        "stdout": stdout,
+        "stderr": stderr,
+        "exit_code": exit_code,
+        "artifacts": artifacts,
+    })

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { STAGES } from "@/lib/pipeline-stages";
 
 type PipelineFlowchartProps = {
@@ -60,7 +61,7 @@ function LoopIcon({ color }: { color: string }) {
   );
 }
 
-export default function PipelineFlowchart({
+function PipelineFlowchartInner({
   activeStage,
   completedStages,
 }: PipelineFlowchartProps) {
@@ -138,3 +139,14 @@ export default function PipelineFlowchart({
     </div>
   );
 }
+
+const PipelineFlowchart = memo(PipelineFlowchartInner, (prev, next) => {
+  if (prev.activeStage !== next.activeStage) return false;
+  if (prev.completedStages.size !== next.completedStages.size) return false;
+  for (const key of prev.completedStages) {
+    if (!next.completedStages.has(key)) return false;
+  }
+  return true;
+});
+
+export default PipelineFlowchart;

@@ -1,5 +1,6 @@
 import os
 import json
+import threading
 import duckdb
 
 DATA_DIR = os.environ.get(
@@ -7,7 +8,31 @@ DATA_DIR = os.environ.get(
     os.path.join(os.path.dirname(__file__), "..", "..", "Sample Data"),
 )
 
+_DB_PATH = os.path.join(DATA_DIR, "airbnb.duckdb")
+
 _con: duckdb.DuckDBPyConnection | None = None
+_db_lock = threading.Lock()
+_schema_json_cache: dict | None = None
+_schema_desc_cache: str | None = None
+
+
+def _persist_to_file() -> None:
+    """Materialize CSVs into a persistent DuckDB file for fast startup."""
+    dest = duckdb.connect(database=_DB_PATH)
+    try:
+        for table_name, filename in [
+            ("listings", "listings.csv"),
+            ("reviews", "reviews.csv"),
+            ("neighbourhoods", "neighbourhoods.csv"),
+        ]:
+            path = os.path.join(DATA_DIR, filename).replace("\\", "/")
+            if os.path.exists(path):
+                dest.execute(
+                    f"CREATE TABLE IF NOT EXISTS {table_name} AS "
+                    f"SELECT * FROM read_csv_auto('{path}', ignore_errors=true)"
+                )
+    finally:
+        dest.close()
 
 
 def _get_connection() -> duckdb.DuckDBPyConnection:
@@ -15,22 +40,15 @@ def _get_connection() -> duckdb.DuckDBPyConnection:
     if _con is not None:
         return _con
 
-    _con = duckdb.connect(database=":memory:")
+    # Fast path: open pre-built DuckDB file
+    if os.path.exists(_DB_PATH):
+        _con = duckdb.connect(database=_DB_PATH, read_only=True)
+        return _con
 
-    _register_view(_con, "listings", "listings.csv")
-    _register_view(_con, "reviews", "reviews.csv")
-    _register_view(_con, "neighbourhoods", "neighbourhoods.csv")
-
+    # Slow path: build from CSVs, persist for next time
+    _persist_to_file()
+    _con = duckdb.connect(database=_DB_PATH, read_only=True)
     return _con
-
-
-def _register_view(con: duckdb.DuckDBPyConnection, name: str, filename: str) -> None:
-    path = os.path.join(DATA_DIR, filename).replace("\\", "/")
-    if not os.path.exists(path):
-        return
-    con.execute(
-        f"CREATE OR REPLACE VIEW {name} AS SELECT * FROM read_csv_auto('{path}', ignore_errors=true)"
-    )
 
 
 TABLE_DESCRIPTIONS = {
@@ -41,44 +59,58 @@ TABLE_DESCRIPTIONS = {
 
 
 def get_schema_json() -> dict:
-    """Return structured schema for all registered DuckDB views."""
-    con = _get_connection()
-    views = con.execute(
-        "SELECT table_name FROM information_schema.tables WHERE table_type='VIEW'"
-    ).fetchall()
+    """Return structured schema for all registered DuckDB tables (cached after first call)."""
+    global _schema_json_cache
+    if _schema_json_cache is not None:
+        return _schema_json_cache
 
-    schema = {}
-    for (view_name,) in views:
-        cols = con.execute(
-            f"SELECT column_name, data_type FROM information_schema.columns "
-            f"WHERE table_name='{view_name}' ORDER BY ordinal_position"
+    con = _get_connection()
+    with _db_lock:
+        tables = con.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_name IN ('listings', 'reviews', 'neighbourhoods')"
         ).fetchall()
-        row_count = con.execute(f"SELECT COUNT(*) FROM {view_name}").fetchone()[0]
-        schema[view_name] = {
-            "description": TABLE_DESCRIPTIONS.get(view_name, ""),
-            "columns": [{"name": c, "type": t} for c, t in cols],
-            "row_count": row_count,
-        }
+
+        schema = {}
+        for (table_name,) in tables:
+            cols = con.execute(
+                f"SELECT column_name, data_type FROM information_schema.columns "
+                f"WHERE table_name='{table_name}' ORDER BY ordinal_position"
+            ).fetchall()
+            row_count = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
+            schema[table_name] = {
+                "description": TABLE_DESCRIPTIONS.get(table_name, ""),
+                "columns": [{"name": c, "type": t} for c, t in cols],
+                "row_count": row_count,
+            }
+    _schema_json_cache = schema
     return schema
 
 
 def get_schema_description() -> str:
-    """Return a compact description of every registered view and its columns."""
+    """Return a compact description of every registered table and its columns (cached)."""
+    global _schema_desc_cache
+    if _schema_desc_cache is not None:
+        return _schema_desc_cache
+
     con = _get_connection()
-    views = con.execute(
-        "SELECT table_name FROM information_schema.tables WHERE table_type='VIEW'"
-    ).fetchall()
-
-    parts: list[str] = []
-    for (view_name,) in views:
-        cols = con.execute(
-            f"SELECT column_name, data_type FROM information_schema.columns "
-            f"WHERE table_name='{view_name}' ORDER BY ordinal_position"
+    with _db_lock:
+        tables = con.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_name IN ('listings', 'reviews', 'neighbourhoods')"
         ).fetchall()
-        col_list = ", ".join(f"{c} ({t})" for c, t in cols)
-        parts.append(f"  {view_name}: {col_list}")
 
-    return "Available tables:\n" + "\n".join(parts)
+        parts: list[str] = []
+        for (table_name,) in tables:
+            cols = con.execute(
+                f"SELECT column_name, data_type FROM information_schema.columns "
+                f"WHERE table_name='{table_name}' ORDER BY ordinal_position"
+            ).fetchall()
+            col_list = ", ".join(f"{c} ({t})" for c, t in cols)
+            parts.append(f"  {table_name}: {col_list}")
+
+    _schema_desc_cache = "Available tables:\n" + "\n".join(parts)
+    return _schema_desc_cache
 
 
 def run_sql(query: str, max_rows: int = 500) -> str:
@@ -89,9 +121,10 @@ def run_sql(query: str, max_rows: int = 500) -> str:
         return json.dumps({"error": "Only SELECT queries are allowed."})
 
     try:
-        result = con.execute(query)
-        columns = [desc[0] for desc in result.description]
-        rows = result.fetchmany(max_rows)
+        with _db_lock:
+            result = con.execute(query)
+            columns = [desc[0] for desc in result.description]
+            rows = result.fetchmany(max_rows)
         data = [dict(zip(columns, row)) for row in rows]
         total = len(data)
         return json.dumps(
