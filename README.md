@@ -1,38 +1,89 @@
 # NYC Airbnb Multi-Agent Data Analyst
 
-> Autonomous data analysis pipeline that turns natural-language questions about NYC Airbnb data into polished, insight-driven reports with presentation-quality charts.
+Arjun Varma & Oranich Jamkachornkiat
+Columbia University — Agentic AI, Spring 2026
 
-**Live Demo:** [airbnb-frontend-686529012610.us-east1.run.app](https://airbnb-frontend-686529012610.us-east1.run.app) | **Backend API:** [airbnb-backend-686529012610.us-east1.run.app](https://airbnb-backend-686529012610.us-east1.run.app)
-
-**Stack:** Python 3.12 | OpenAI Agents SDK | FastAPI | DuckDB | Next.js 16 | React 19 | Tailwind CSS 4 | Google Cloud Run
-
-Arjun Varma & Oranich Jamkachornkiat | Columbia University | Agentic AI, Spring 2026
+**Live Application:** [airbnb-frontend-686529012610.us-east1.run.app](https://airbnb-frontend-686529012610.us-east1.run.app) | **Backend API:** [airbnb-backend-686529012610.us-east1.run.app](https://airbnb-backend-686529012610.us-east1.run.app)
 
 ---
 
-## Executive Summary
+## Abstract
 
-**Situation.** New York City's short-term rental market spans **37,257 active Airbnb listings** across five boroughs, backed by **985,674 guest reviews** and **71 data dimensions** covering host profiles, property details, pricing, availability, amenities, and review scores. Answering analytical questions about this dataset requires a data analyst to write SQL queries, clean messy column types, compute statistics, generate charts, and synthesize findings into a coherent narrative. The Agentic AI course requires a multi-agent system that performs three steps of a data analysis lifecycle: *Collect* real-world data, perform *Exploratory Data Analysis*, and *Form and communicate a hypothesis with evidence*.
-
-**Task.** Build a fully autonomous data analyst that accepts a single natural-language question and delivers a polished, publication-quality briefing with charts — no human intervention between query and output. The system must satisfy all 7 core requirements (10 points), at least 2 elective features (5 points), and implement the three pipeline steps with depth and rigor (15 points).
-
-**Action.** We designed and deployed a **4-stage sequential pipeline** using the OpenAI Agents SDK: a *Data Collector* that translates questions into DuckDB SQL, an *EDA Analyst* that writes and executes Python for statistical analysis (with iterative SQL refinement when it discovers data gaps), a *Hypothesis Generator* that forms data-grounded conclusions with analytical charts, and a *Presenter* that produces a polished briefing with presentation-quality visualizations. Each agent writes its own code at runtime and executes it in a sandboxed subprocess. The Presenter can hand off to sub-agents to request additional data. The frontend streams every agent action in real time over WebSocket, rendering an interactive execution trace alongside the final answer. The entire system is containerized and deployed on Google Cloud Run with a CI/CD pipeline via Cloud Build.
-
-**Result.** A single question triggers SQL generation, statistical analysis, hypothesis formation, and chart creation — all within **60–90 seconds**. Verified on a test suite of 20 diverse questions with a **100% success rate**. The system implements all 7 core requirements, 5 elective features (code execution, data visualization, artifacts, structured output, iterative refinement), and the full Collect → EDA → Hypothesize pipeline with depth that adapts to every question.
+This report describes a multi-agent data analysis system that accepts natural-language questions about New York City's Airbnb market and autonomously produces polished analytical briefings with publication-quality charts. The system operates over three tables sourced from Inside Airbnb — 37,257 active listings with 71 data dimensions, 985,674 guest reviews, and 230 neighbourhood-to-borough mappings — totaling approximately 380 MB of real-world data. A four-stage sequential pipeline, built on the OpenAI Agents SDK, orchestrates five specialized agents: a Data Collector that translates questions into DuckDB SQL, an EDA Analyst that writes and executes Python for statistical analysis with iterative database refinement, a Hypothesis Generator that forms data-grounded conclusions with analytical charts, and a Presenter that delivers a polished briefing with presentation-quality visualizations and can delegate to sub-agents for additional data. Each agent writes its own code at runtime and executes it in a sandboxed environment. The frontend streams every agent action in real time over WebSocket, rendering an interactive execution trace alongside the final answer. End-to-end latency is 60–90 seconds per question. The system was verified against a test suite of 20 diverse analytical questions with a 100% success rate, and satisfies all seven core course requirements alongside five elective features: code execution, data visualization, persistent artifacts, structured output, and iterative refinement.
 
 ---
 
-## Demo
+## 1. Introduction and Motivation
 
-![Application Screenshot](image.png)
+Analyzing a large, messy real-world dataset requires multiple distinct skills: writing database queries to extract relevant subsets, computing statistics to surface patterns, generating visualizations to communicate findings, and synthesizing everything into a coherent narrative. A single LLM prompt cannot reliably perform all of these tasks — it tends to skip exploratory steps, hallucinate statistics it should compute, or produce generic summaries rather than data-grounded insights.
 
-*The landing page displays a live dataset overview pulled from DuckDB, an interactive schema explorer for all three tables, and suggested questions across 10 analytical categories. Typing a question triggers the full 4-agent pipeline with real-time progress tracking.*
+A multi-agent architecture addresses this by decomposing the analyst workflow into specialized stages, mirroring how a real data team operates. A data engineer writes the queries, a statistician runs the numbers, an analyst forms hypotheses, and a presenter creates the deliverable. Each agent is scoped to a single responsibility, with explicit behavioral constraints preventing it from short-circuiting the pipeline — the Collector must not draw conclusions, the Analyst must not create visualizations, and the Presenter must not include raw code.
 
-**[Try the live demo →](https://airbnb-frontend-686529012610.us-east1.run.app)**
+The course requires a multi-agent system that implements three steps of a data analysis lifecycle — *Collect* real-world data, perform *Exploratory Data Analysis*, and *Form and communicate a hypothesis with evidence* — with a frontend, tool calling, a non-trivial dataset, and deployment. This project fulfills those requirements and extends them with five elective features: runtime code execution in a sandboxed subprocess, dynamic data visualization via matplotlib and seaborn, persistent chart artifacts, Pydantic-based structured output for typed inter-agent data flow, and an iterative refinement loop where the EDA Analyst queries the database when its analysis reveals data gaps.
+
+The goal is a fully autonomous pipeline: the user types one natural-language question and receives a complete analytical briefing — no intermediate human intervention between query and output.
 
 ---
 
-## Architecture
+## 2. Dataset
+
+The data comes from [Inside Airbnb](http://insideairbnb.com/), a public project that scrapes Airbnb listing information. The project uses the New York City 2022 scrape, comprising three CSV files bundled in the repository's `Sample Data/` directory and loaded into DuckDB at startup.
+
+The **listings** table contains 37,257 rows and 71 columns (85 MB), covering host demographics (superhost status, response time, verification), property characteristics (room type, accommodates, bedrooms, bathrooms, amenities), geolocation (latitude, longitude, neighbourhood, borough), pricing (nightly rate, minimum/maximum nights), availability windows (30/60/90/365-day), and seven individual review score dimensions (accuracy, cleanliness, check-in, communication, location, value, plus an overall rating). The **reviews** table contains 985,674 rows and 6 columns (295 MB), with individual guest reviews including free-text comments, dates, and reviewer information linked to listings via `listing_id`. The **neighbourhoods** table maps 230 neighbourhood names to the five boroughs: Manhattan, Brooklyn, Queens, Bronx, and Staten Island.
+
+This dataset is large enough that it cannot be trivially loaded into an LLM context window — the listings table alone exceeds most model limits. The agents must query it selectively at runtime using SQL and process results programmatically.
+
+Several real-world data quality issues required special handling in every agent's system prompt. The `price` column is stored as a VARCHAR string (`"$150.00"`) that must be cast to a float. Boolean fields like `host_is_superhost` and `instant_bookable` use string literals `'t'` and `'f'` rather than actual booleans. Rate columns such as `host_response_rate` are percentage strings (`"95%"`) requiring string manipulation before numeric comparison. The `amenities` column stores a JSON array as a plain string (`'["Wifi","Kitchen"]'`) that must be parsed or pattern-matched.
+
+*Figure 1: Database schema and table relationships.*
+
+```mermaid
+erDiagram
+    LISTINGS ||--o{ REVIEWS : "listing_id → id"
+    LISTINGS }|--|| NEIGHBOURHOODS : "neighbourhood_cleansed → neighbourhood"
+
+    LISTINGS {
+        int id PK
+        string name
+        int host_id
+        string neighbourhood_cleansed FK
+        string room_type
+        string price
+        float review_scores_rating
+        int number_of_reviews
+    }
+
+    REVIEWS {
+        int id PK
+        int listing_id FK
+        date date
+        int reviewer_id
+        string comments
+    }
+
+    NEIGHBOURHOODS {
+        string neighbourhood PK
+        string neighbourhood_group
+    }
+```
+
+At startup, `backend/tools/sql_runner.py` registers three DuckDB in-memory views using `read_csv_auto()`. The schema is dynamically queried via `information_schema` and injected into the Collector and Analyst agent prompts, ensuring the agents always have accurate metadata about available tables, columns, and types.
+
+---
+
+## 3. System Architecture
+
+The system follows a four-stage sequential pipeline orchestrated by procedural Python code in `backend/main.py`, not by an LLM-based router. This was a deliberate design decision: since the pipeline order is deterministic — Collect, then Analyze, then Hypothesize, then Present — there is no routing decision for a model to make. Implementing the orchestrator as a `_run_pipeline()` function avoids wasting a model call on routing and ensures reliable stage sequencing with explicit timeout and fallback handling at each step.
+
+The **OpenAI Agents SDK** was selected for its first-class primitives: `Agent` objects with dedicated system prompts, `function_tool` decorators for tool registration, `Runner.run_streamed()` for real-time event streaming, and `handoffs` for sub-agent delegation. Each of the five agents is a self-contained `Agent` instance with its own prompt file (`backend/prompts/*.md`), tool set, and behavioral constraints.
+
+The system supports three LLM providers through a priority cascade configured in `backend/main.py`. If a GCP project ID is set and the model name starts with `google/`, requests route to **Vertex AI**. Otherwise, if an OpenRouter API key is available, requests route to **OpenRouter** via its unified API. As a final fallback, requests go directly to **OpenAI**. The `MultiProvider` abstraction from the Agents SDK handles this routing transparently. The default model is `openai/gpt-5.4-mini` via OpenRouter, selected for its balance of capability, latency, and cost across a pipeline that makes 4–8 model calls per question.
+
+Agents do not communicate directly with each other. The orchestrator threads each stage's output as input to the next via explicit `_build_*_input()` functions — a pattern referred to as context threading. Each subsequent agent receives the full accumulated context from all prior stages, but agents are stateless across questions: every pipeline run starts fresh with no conversational memory.
+
+The one exception to this purely sequential flow is the **Presenter**, which is the only agent that uses SDK-level handoffs. When it determines that additional data is needed to complete the briefing, it can delegate to two sub-agents — a `_presenter_collector` (for additional SQL queries) and a `_presenter_analyst` (for additional statistical computation) — who return results and hand control back. This creates a refinement loop within the final stage.
+
+*Figure 2: System architecture. Solid lines indicate the primary pipeline flow; dashed lines show the Presenter's optional handoff-based refinement loop.*
 
 ```mermaid
 graph TD
@@ -78,97 +129,35 @@ graph TD
     style SA fill:#6C5CE7,color:#fff,stroke-dasharray: 5 5
 ```
 
-**Five agents. Three tools. One pipeline.** Each agent is a distinct `Agent` object from the OpenAI Agents SDK with its own system prompt (`backend/prompts/*.md`), tools, and behavioral constraints. The orchestrator in `main.py` threads each stage's output as context to the next, with per-stage timeouts and chart validation built in.
-
 ---
 
-## Pipeline: Four Stages of Analysis
+## 4. Pipeline: Four Stages of Analysis
 
-### Stage 1: Collect — Data Collector
+### 4.1 Stage 1: Data Collection
 
-| | |
-|---|---|
-| **Role** | Translates natural-language questions into DuckDB SQL queries |
-| **Agent** | `backend/agent_defs/collector.py` |
-| **Prompt** | `backend/prompts/collector.md` |
-| **Tool** | `query_database(sql)` → `backend/tools/sql_runner.py` → `run_sql()` |
-| **Engine** | DuckDB in-memory, `read_csv_auto()` views |
+The Data Collector agent (`backend/agent_defs/collector.py`) receives the user's natural-language question and translates it into one or more DuckDB SQL queries. The full database schema — table names, column names, column types, and row counts — is injected into the agent's system prompt at startup via a `{SCHEMA_INFO}` placeholder in `backend/prompts/collector.md`, so the agent always knows what data is available without hardcoding.
 
-The Data Collector receives the user's question and dynamically generates SQL. The database schema — all table names, columns, and types — is injected into the agent's system prompt at startup via a `{SCHEMA_INFO}` placeholder, so the agent always knows what data is available.
+The agent generates different SQL for different questions — there are no templates or predefined queries. It handles the dataset's type quirks (casting `price` from VARCHAR, converting `'t'`/`'f'` booleans, stripping `%` from rate columns) because these gotchas are documented directly in its prompt. Results are capped at 500 rows via `fetchmany()`, and the agent is instructed to use aggregations (`GROUP BY`, `AVG`, `COUNT`) to keep output concise. For complex questions, the agent can issue multiple queries. The output is a JSON structure with `columns`, `row_count`, and `data` arrays, passed to the next stage as context.
 
-**Key behaviors:**
-- Generates different SQL for different questions (no templates or predefined queries)
-- Handles data-type gotchas: casts `price` from VARCHAR `"$150.00"`, converts `'t'`/`'f'` string booleans, strips `%` from rate columns
-- Results capped at 500 rows — the agent is instructed to use aggregations (`GROUP BY`, `AVG`, `COUNT`) to keep output concise
-- Can issue multiple queries to fully answer complex questions
+### 4.2 Stage 2: Exploratory Data Analysis
 
-**Output:** JSON with `columns`, `row_count`, and `data` arrays passed to the next stage.
+The EDA Analyst (`backend/agent_defs/analyst.py`) receives the collected data and writes Python code to explore it. The `run_analysis_code` tool executes agent-written pandas, numpy, and scipy code in a sandboxed environment, returning stdout and any findings. The Analyst computes means, medians, percentiles, distributions, correlations, and standard deviations; segments data by meaningful dimensions (borough, room type, time period); and identifies outliers, anomalies, and patterns.
 
-### Stage 2: Explore — EDA Analyst
+What distinguishes this stage is its **iterative refinement loop**. The Analyst has access to both `run_analysis_code` and `query_database`. When its initial analysis reveals data gaps — missing columns, wrong granularity, or a needed breakdown — the Analyst queries the database directly to fetch additional data and continues its computation. The database schema is injected into the Analyst's prompt at startup, giving it full awareness of available tables and columns for these follow-up queries. This creates an analyze → identify gap → query → analyze deeper cycle within a single stage. Different questions produce entirely different code and different findings. The Analyst focuses exclusively on analysis; visualization is deferred to Stage 3.
 
-| | |
-|---|---|
-| **Role** | Writes and executes Python code to compute statistics, segment data, and find patterns |
-| **Agent** | `backend/agent_defs/analyst.py` |
-| **Prompt** | `backend/prompts/analyst.md` |
-| **Tools** | `run_analysis_code(code)` → `backend/tools/code_executor.py` → `execute_python()`; `query_database(sql)` → `backend/tools/sql_runner.py` → `run_sql()` |
-| **Engine** | Python subprocess (pandas, numpy, scipy) + DuckDB (iterative SQL) |
+### 4.3 Stage 3: Hypothesis Formation
 
-The EDA Analyst receives the raw query results from Stage 1 and writes Python code to explore the data. When the initial data is insufficient — missing columns, wrong granularity, or a needed breakdown — the Analyst queries the database directly via `query_database` and continues its analysis. This creates an **iterative refinement loop**: analyze → identify gap → query → analyze deeper. The database schema is injected into the Analyst's prompt at startup, giving it full awareness of available tables and columns.
+The Hypothesis Generator (`backend/agent_defs/hypothesizer.py`) synthesizes the Analyst's findings into a clear, data-grounded hypothesis. It then goes deeper — querying the raw data itself via `create_visualization` to explore additional angles the Analyst may not have covered. The agent pursues 3–5 distinct analytical angles per question: breakdowns, distributions, cross-dimensional comparisons, contextual background numbers, outlier analysis, and trend detection.
 
-**Key behaviors:**
-- Computes means, medians, percentiles, distributions, correlations, and standard deviations
-- Segments data by meaningful dimensions (borough, room type, time period)
-- Identifies outliers, anomalies, and interesting patterns
-- **Iterative refinement:** fetches additional data via SQL when analysis reveals gaps, then continues computation
-- Different questions produce entirely different code and different findings
-- Focuses on analysis, not visualization (charts come in Stage 3)
+Chart generation is mandatory at this stage: the agent must call `create_visualization` at least once, producing matplotlib/seaborn charts saved as PNG artifacts. An error retry protocol is built into the prompt — if code execution fails, the agent reads the traceback, fixes the code, and retries up to 3 times. If it still fails, the agent describes the finding in words rather than pasting raw code into its output.
 
-**Output:** Structured findings with specific metrics, values, and interpretations.
+### 4.4 Stage 4: Presentation
 
-### Stage 3: Hypothesize — Hypothesis Generator
+The Presenter (`backend/agent_defs/presenter.py`) receives the full pipeline context — raw SQL results, statistical findings, hypothesis with evidence, and a list of charts already generated in Stage 3 — and transforms it into a polished, visually rich briefing suitable for a non-technical audience. It creates presentation-quality charts using an Airbnb-inspired color palette (`['#FF5A5F', '#00A699', '#FC642D', '#484848', '#767676']`), with insight-driven titles ("Manhattan charges 40% more" rather than "Price by Borough"), 14pt+ labels, and annotated values. Charts are embedded inline using markdown image syntax.
 
-| | |
-|---|---|
-| **Role** | Forms a data-grounded hypothesis and creates supporting analytical charts |
-| **Agent** | `backend/agent_defs/hypothesizer.py` |
-| **Prompt** | `backend/prompts/hypothesizer.md` |
-| **Tool** | `create_visualization(code)` → `backend/tools/code_executor.py` → `execute_python()` |
-| **Engine** | Python subprocess (matplotlib, seaborn, duckdb) |
+The Presenter is unique in that it can request additional data through SDK-level handoffs to two sub-agents: a `_presenter_collector` for follow-up SQL queries and a `_presenter_analyst` for additional statistical computation. These sub-agents complete their work and hand control back, enabling a refinement loop within the final stage. The Presenter is told which charts already exist from Stage 3 to avoid duplication. If it produces zero charts, the orchestrator retries with an explicit nudge instruction.
 
-The Hypothesis Generator synthesizes the Analyst's findings into a clear hypothesis, then goes deeper — querying the raw data itself to explore additional angles the Analyst may not have covered.
-
-**Key behaviors:**
-- Must call `create_visualization` at least once (mandatory, enforced by prompt and validated by orchestrator)
-- Pursues 3–5 distinct analytical angles per question: breakdowns, distributions, cross-dimensional comparisons, contextual background numbers, outlier analysis, and trend detection
-- Error retry protocol: if code execution fails, reads the traceback, fixes the code, and retries up to 3 times
-- Never pastes raw Python code into its text output
-
-**Output:** Hypothesis statement + supporting evidence + analytical chart artifacts (PNG).
-
-### Stage 4: Present — Presenter
-
-| | |
-|---|---|
-| **Role** | Senior data analyst delivering a polished briefing to a non-technical audience |
-| **Agent** | `backend/agent_defs/presenter.py` |
-| **Prompt** | `backend/prompts/presenter.md` |
-| **Tools** | `create_visualization(code)` for charts |
-| **Handoffs** | Can hand off to `Data Collector` and `EDA Analyst` sub-agents for additional data |
-| **Engine** | Python subprocess (matplotlib, seaborn) |
-
-The Presenter receives the full pipeline context — raw data, statistical findings, hypothesis with evidence — and transforms it into a polished, visually rich briefing. It creates presentation-quality charts with Airbnb-inspired color palettes, insight-driven titles, and annotated values.
-
-**Key behaviors:**
-- Must produce at least one chart and embed it inline using `![title](/artifacts/run_id/filename.png)` markdown
-- Can request additional data by handing off to two sub-agents (`_presenter_collector`, `_presenter_analyst`), who return results and hand control back
-- Uses a professional color palette: `['#FF5A5F', '#00A699', '#FC642D', '#484848', '#767676']`
-- Told about charts already generated by the Hypothesizer to avoid duplication
-- If the Presenter generates zero charts, the orchestrator retries with an explicit nudge
-
-**Output:** Markdown briefing with embedded charts, ready for the frontend to render.
-
-### Pipeline Sequence
+*Figure 3: Complete lifecycle of a single user question through the four pipeline stages.*
 
 ```mermaid
 sequenceDiagram
@@ -218,284 +207,59 @@ sequenceDiagram
 
 ---
 
-## Dataset
+## 5. Model Design Decisions
 
-**Source:** [Inside Airbnb](http://insideairbnb.com/) — New York City, 2022 scrape.
+**Model selection.** The default model is `openai/gpt-5.4-mini` via OpenRouter, configurable through the `AGENT_MODEL` environment variable. A mini-class model was selected because the pipeline makes 4–8 model calls per question (four stages plus potential sub-agent handoffs), and larger models would push per-question latency and cost beyond practical limits. GPT-5.4-mini provides sufficient capability for SQL generation, Python code writing, statistical reasoning, and narrative synthesis while keeping total pipeline execution under 90 seconds.
 
-| Table | Rows | Columns | Size | Description |
-|-------|------|---------|------|-------------|
-| **listings** | 37,257 | 71 | 85 MB | Host profiles, property details, location, pricing, amenities, availability, and review scores for every active listing |
-| **reviews** | 985,674 | 6 | 295 MB | Individual guest reviews with free-text comments, dates, and reviewer information |
-| **neighbourhoods** | 230 | 2 | 5 KB | Neighbourhood names mapped to the five boroughs: Manhattan, Brooklyn, Queens, Bronx, Staten Island |
+**Provider abstraction.** The `MultiProvider` and `RunConfig` pattern from the OpenAI Agents SDK allows the same agent definitions to work across OpenRouter, Vertex AI, and direct OpenAI without code changes. This was important for deployment flexibility: Vertex AI offers GCP-native authentication for production, OpenRouter provides access to a wide range of models for experimentation, and direct OpenAI serves as a reliable fallback. The provider is selected automatically at startup based on which API keys are configured (`backend/agent_defs/config.py`, `backend/main.py`).
 
-### Column Categories (listings)
+**Prompt architecture.** Each agent's behavior is governed by a dedicated markdown prompt file in `backend/prompts/`, loaded at startup by a utility function that strips YAML frontmatter. Prompts serve as the primary behavioral mechanism — they enforce role boundaries (the Collector must not draw conclusions; the Analyst must not create visualizations; the Presenter must never include Python code), encode data quality handling for the dataset's type quirks, and specify output format and chart standards. The prompt system is documented in `backend/prompts/README.md`.
 
-| Category | Key Columns | Notes |
-|----------|-------------|-------|
-| **Host** | `host_id`, `host_name`, `host_since`, `host_is_superhost`, `host_response_time`, `host_response_rate`, `host_acceptance_rate`, `host_identity_verified`, `host_listings_count` | Superhost status, verification, and responsiveness metrics |
-| **Location** | `neighbourhood_cleansed`, `neighbourhood_group_cleansed`, `latitude`, `longitude` | 5 boroughs, 230 neighbourhoods, precise coordinates |
-| **Property** | `property_type`, `room_type`, `accommodates`, `bedrooms`, `beds`, `bathrooms_text`, `amenities` | 4 room types (Entire home, Private room, Shared room, Hotel room) |
-| **Pricing** | `price`, `minimum_nights`, `maximum_nights` | Nightly rate with stay length constraints |
-| **Availability** | `availability_30/60/90/365`, `has_availability`, `instant_bookable` | Rolling availability windows and booking settings |
-| **Reviews** | `number_of_reviews`, `review_scores_rating`, `review_scores_accuracy/cleanliness/checkin/communication/location/value`, `first_review`, `last_review`, `reviews_per_month` | 7 individual review score dimensions |
-| **Text** | `name`, `description`, `neighborhood_overview` | Free-text fields for NLP analysis |
+**Dynamic schema injection.** The Collector and Analyst prompts contain `{SCHEMA_INFO}` placeholders that are replaced at startup with the actual DuckDB schema — table names, column names, column types, and row counts. This ensures agents always operate with accurate metadata. If the dataset changes, the prompts update automatically without manual editing.
 
-### Data Quality Gotchas
+**Context threading.** Agents are stateless across questions. Within a single pipeline run, context accumulates through explicit input construction via `_build_collector_input()`, `_build_analyst_input()`, `_build_hypothesizer_input()`, and `_build_presenter_input()` functions. Each function assembles the question, relevant prior outputs, and stage-specific instructions. This is deliberate: it avoids context window bloat from conversational memory and makes each pipeline run independently reproducible.
 
-These real-world data quirks are documented in every agent's prompt so they handle them correctly:
-
-| Column | Issue | SQL Fix | Python Fix |
-|--------|-------|---------|------------|
-| `price` | Stored as VARCHAR `"$150.00"` | `REPLACE(price,'$','')::FLOAT` | `df['price'].str.replace('[$,]','',regex=True).astype(float)` |
-| `host_is_superhost` | String `'t'`/`'f'`, not boolean | `= 't'` | `== 't'` |
-| `host_response_rate` | String `"95%"` | `REPLACE(...,'%','')::FLOAT` | `.str.rstrip('%').astype(float)` |
-| `amenities` | JSON array string `'["Wifi","Kitchen"]'` | `LIKE '%Wifi%'` | `json.loads(val)` |
-| `instant_bookable` | String `'t'`/`'f'`, not boolean | `= 't'` | `== 't'` |
-
-### Table Relationships
-
-```mermaid
-erDiagram
-    LISTINGS ||--o{ REVIEWS : "listing_id → id"
-    LISTINGS }|--|| NEIGHBOURHOODS : "neighbourhood_cleansed → neighbourhood"
-
-    LISTINGS {
-        int id PK
-        string name
-        int host_id
-        string neighbourhood_cleansed FK
-        string room_type
-        string price
-        float review_scores_rating
-        int number_of_reviews
-    }
-
-    REVIEWS {
-        int id PK
-        int listing_id FK
-        date date
-        int reviewer_id
-        string comments
-    }
-
-    NEIGHBOURHOODS {
-        string neighbourhood PK
-        string neighbourhood_group
-    }
-```
-
-### Data Loading
-
-At startup, `backend/tools/sql_runner.py` registers three DuckDB in-memory views using `read_csv_auto(path, ignore_errors=true)`. The schema is dynamically queried via `information_schema` and injected into both the Collector and EDA Analyst agent prompts (the Analyst needs it for iterative refinement queries). The frontend fetches the same schema via `GET /api/schema` to power the interactive Schema Explorer.
+**Multi-model evaluation.** The project includes an evaluation harness (`backend/evaluate.py`) capable of running the full pipeline against multiple models and scoring results on success, chart quality, answer length, tool-call efficiency, and speed. Models benchmarked include GPT-4.1, GPT-5.4-mini, Gemini 2.5 Pro, Gemini 2.5 Flash, and Claude Sonnet 4.6, with per-model cost estimation based on token pricing.
 
 ---
 
-## Grading Rubric Mapping
+## 6. Tool Implementation
 
-### Core Requirements (10 points)
+The system uses three tools, all registered via the OpenAI Agents SDK's `@function_tool` decorator.
 
-| # | Requirement | Pts | Implementation | Key Files |
-|---|-------------|-----|----------------|-----------|
-| 1 | **Frontend** | 2 | Next.js 16 / React 19 app with real-time WebSocket streaming, markdown rendering with inline charts, interactive schema explorer, pipeline progress flowchart, expandable agent trace, shareable results, memory game | `frontend/src/app/page.tsx`, `frontend/src/components/*.tsx` |
-| 2 | **Agent Framework** | 1 | OpenAI Agents SDK — `Agent`, `function_tool`, `Runner.run_streamed()`, `handoffs` for sub-agent delegation | `backend/agent_defs/*.py` |
-| 3 | **Tool Calling** | 1 | 3 distinct tools: `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (charts) | `backend/agent_defs/collector.py`, `analyst.py`, `hypothesizer.py`, `presenter.py` |
-| 4 | **Non-Trivial Dataset** | 1 | 37K listings (71 columns, 85 MB) + 985K reviews (295 MB) + 230 neighbourhoods — far too large to fit in context | `Sample Data/*.csv`, `backend/tools/sql_runner.py` |
-| 5 | **Multi-Agent Pattern** | 2 | Orchestrator-handoff pipeline: 5 agents with distinct prompts and responsibilities. Presenter has 2 sub-agents (Collector + Analyst) with bidirectional handoffs. | `backend/agent_defs/presenter.py` (lines 36–68), `backend/main.py` (`_run_pipeline`) |
-| 6 | **Deployed** | 2 | Docker containers on GCP Cloud Run, Cloud Build CI/CD pipeline, Artifact Registry for images | `cloudbuild.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` |
-| 7 | **README** | 1 | This document | `README.md` |
+**`query_database(sql)`** wraps DuckDB, an in-process OLAP engine that reads CSV files natively via `read_csv_auto()` with no ETL step (`backend/tools/sql_runner.py`). DuckDB was chosen over SQLite (row-oriented, poor at analytical queries) and PostgreSQL (requires an external server) because it handles columnar analytical workloads efficiently in a single process. A read-only enforcement layer rejects any query containing INSERT, UPDATE, DELETE, DROP, ALTER, or CREATE. Results are capped at 500 rows via `fetchmany()`. The connection is a thread-safe singleton initialized lazily on first access. Schema introspection via `information_schema` powers both the agent prompt injection and the frontend's interactive Schema Explorer (`GET /api/schema`).
 
-### Elective Features — Grab Bag (5 points, need 2+)
-
-| # | Feature | Pts | Implementation | Key Files |
-|---|---------|-----|----------------|-----------|
-| 1 | **Code Execution** | 2.5 | Agents write Python at runtime, executed in sandboxed subprocess with 120s timeout, restricted import whitelist, auto-save of open matplotlib figures | `backend/tools/code_executor.py` |
-| 2 | **Data Visualization** | 2.5 | Hypothesizer generates analytical charts; Presenter generates publication-quality charts with Airbnb color palette, insight-driven titles, and value annotations | `backend/agent_defs/hypothesizer.py`, `backend/agent_defs/presenter.py` |
-| 3 | **Artifacts** | Bonus | Charts saved as PNG to `/artifacts/{run_id}/`, served as static files, embedded inline in markdown, persisted for sharing | `backend/tools/code_executor.py` (lines 28–29), `backend/main.py` (line 78) |
-| 4 | **Structured Output** | Bonus | Pydantic models (`QueryResult`, `EDAFindings`) for typed inter-agent data flow; JSON-structured tool outputs with `columns`, `row_count`, `exit_code`, `artifacts` | `backend/models/schemas.py` |
-| 5 | **Iterative Refinement** | 2.5 | EDA Analyst has both `run_analysis_code` and `query_database` tools. When analysis reveals data gaps (missing columns, wrong granularity), the Analyst queries the database directly and continues — creating an analyze→query→analyze refinement loop within a single stage | `backend/agent_defs/analyst.py`, `backend/prompts/analyst.md` |
-
-### Pipeline Steps (15 points)
-
-| Step | Pts | Rubric Criterion | How We Satisfy It |
-|------|-----|-------------------|--------------------|
-| **Collect** | 5 | Real data, retrieved at runtime, dynamic to different questions, accurately described | DuckDB SQL generated dynamically from NL at runtime. Different questions produce different SQL. Schema injected at startup. Three tables (37K + 985K + 230 rows). Not hard-coded. |
-| **Explore (EDA)** | 5 | At least one tool call that computes over data, surfaces specific findings, adapts to different questions | `run_analysis_code` writes and executes pandas/scipy/numpy code. `query_database` enables iterative refinement — the Analyst fetches additional data when it spots gaps. Computes statistics, distributions, correlations. Different questions → different code, different findings. |
-| **Hypothesize** | 5 | Grounded in data from previous steps, cites evidence, explains reasoning | Hypothesis cites specific numbers from EDA. Generates supporting charts. Presenter embeds charts inline with bold key figures. Evidence trail: SQL → statistics → hypothesis → polished briefing. |
+**`run_analysis_code(code)` and `create_visualization(code)`** both call the same `execute_python()` function in `backend/tools/code_executor.py`. Agent-written Python runs in a daemon thread with a 120-second timeout. A preamble automatically injects `matplotlib.use('Agg')` (non-interactive backend), `ARTIFACTS_DIR`, and `DATA_DIR` as pre-set variables. A postamble auto-saves any open matplotlib figures that the agent did not explicitly save, preventing chart loss. An import whitelist restricts available modules to: pandas, numpy, scipy, matplotlib, seaborn, duckdb, json, csv, math, statistics, collections, datetime, re, os, io, and textwrap. Output is truncated (8,000 characters stdout, 4,000 characters stderr) to prevent context window overflow. Generated artifacts are persisted to `/artifacts/{run_id}/` and served as static files for frontend rendering.
 
 ---
 
-## What Happens When You Ask a Question
+## 7. Reliability and Orchestration
 
-1. **User types a question** in the `ChatInput` component and presses Enter
-2. **Frontend opens a WebSocket** connection to `/ws/analyze` and sends `{question, history: []}`
-3. **`main.py`** receives the message in `websocket_analyze()`, calls `_run_pipeline()` with a 600s timeout
-4. **Orchestrator trace** event emitted — frontend `PipelineFlowchart` shows "Collect" stage activating
-5. **Stage 1 — Collector** runs with 180s timeout:
-   - Agent generates SQL based on the question and dataset schema
-   - `query_database(sql)` executes against DuckDB, returns JSON results
-   - Trace events (`tool_call`, `tool_output`) stream to the frontend in real time
-6. **Stage 2 — Analyst** runs with 180s timeout:
-   - Agent writes Python code using collected data
-   - `run_analysis_code(code)` executes in a subprocess, returns stdout and findings
-   - If the collected data is insufficient, the Analyst calls `query_database(sql)` to fetch additional data and continues analysis (iterative refinement)
-   - Pipeline flowchart advances to "Analyze"
-7. **Stage 3 — Hypothesizer** runs with 180s timeout:
-   - Agent forms hypothesis and writes matplotlib/seaborn chart code
-   - `create_visualization(code)` generates PNG artifacts
-   - Pipeline flowchart advances to "Synthesize"
-8. **Stage 4 — Presenter** runs with 180s timeout:
-   - Receives full context + list of existing charts from Stage 3
-   - Creates presentation-quality charts with professional styling
-   - Can hand off to sub-agents if it needs additional data
-   - Embeds charts inline with `![title](/artifacts/run_id/filename.png)`
-9. **Post-processing:**
-   - `_clean_final_answer()` strips any code blocks, bare filenames, or formatting artifacts
-   - `_inject_inline_images()` catches any charts the Presenter forgot to embed
-   - If zero charts were produced, the Presenter is retried with an explicit nudge
-10. **Result delivered** via WebSocket as `{type: "result", content, artifacts}`
-11. **Frontend renders** the `MessageBubble` with `ReactMarkdown` (inline charts), an artifact gallery, a `ShareButton`, and an expandable `ThinkingTrace` showing the full 4-stage execution timeline
+The pipeline orchestrator in `backend/main.py` includes several reliability mechanisms beyond basic sequential execution. Each agent stage is wrapped in `asyncio.wait_for()` with a **180-second per-stage timeout**, and the entire `_run_pipeline()` call has a **600-second pipeline timeout**. If a stage times out, the orchestrator returns a fallback string and the pipeline continues — a single slow agent does not block the entire run.
+
+Chart validation ensures every answer includes at least one visualization. If the Presenter produces zero charts, the orchestrator retries the stage with an explicit nudge instruction appended to the input. Generated chart files are validated with PNG magic-byte checks (`b'\x89PNG'`) and a minimum file size threshold (5,000 bytes) to filter out blank or broken images. A deduplication pass removes auto-saved duplicates, and a hard cap of four charts per answer prevents visual overload.
+
+Post-processing consists of two functions. `_clean_final_answer()` strips any code blocks, bare filenames, or formatting artifacts that agents may have left in their output. `_inject_inline_images()` distributes any unreferenced chart files across `##`-delimited sections of the markdown, catching cases where the Presenter created charts but forgot to embed them with `![title](path)` syntax.
+
+A WebSocket heartbeat (30-second interval) keeps the connection alive during long-running stages, and every agent action — handoffs, tool calls, tool outputs, and messages — is streamed to the frontend as real-time trace events.
 
 ---
 
-## Orchestration Details
+## 8. Frontend
 
-The pipeline orchestrator in `main.py` includes several reliability mechanisms beyond basic sequential execution:
+The frontend is a Next.js 16 / React 19 application written in TypeScript with Tailwind CSS 4, deployed as a standalone Docker container (`frontend/src/app/page.tsx`). It communicates with the backend exclusively via WebSocket for analysis requests and REST for schema queries and sharing.
 
-| Mechanism | Implementation | Purpose |
-|-----------|---------------|---------|
-| **Per-stage timeout** | `STAGE_TIMEOUT_SECONDS = 180` — each agent wrapped in `asyncio.wait_for()` | Prevents a single agent from hanging the entire pipeline |
-| **Pipeline timeout** | `PIPELINE_TIMEOUT_SECONDS = 600` — wraps `_run_pipeline()` | Hard limit on total execution time |
-| **Stage fallback** | `_run_stage_with_timeout()` returns fallback string on timeout | Pipeline continues even if one stage fails |
-| **Chart validation** | If Presenter produces 0 charts → retry with nudge instruction | Ensures every answer includes at least one visualization |
-| **Inline injection** | `_inject_inline_images()` distributes unreferenced charts across `##` sections | Safety net if the Presenter creates charts but forgets `![](path)` syntax |
-| **Answer cleaning** | `_clean_final_answer()` strips code blocks, bare filenames, extra whitespace | Ensures the final output is clean for non-technical users |
-| **Context threading** | Each stage receives all prior outputs as input | Later agents have full context to build on earlier work |
-| **Presenter data** | `_build_presenter_input()` includes truncated `collector_output` (4000 chars) + `existing_chart_paths` | Presenter can reference raw data and avoid chart duplication |
+The primary user experience is a chat interface. The landing page displays a live dataset overview (listing counts, review counts, and data field counts pulled from DuckDB), an interactive schema explorer for all three tables, and a grid of suggested questions across ten analytical categories. When the user submits a question, a WebSocket connection opens and the frontend renders the pipeline's progress in real time: a vertical flowchart shows which of the four stages is currently active, and an expandable thinking trace displays every SQL query, Python code block, data preview, and agent message as it occurs. The final answer is rendered as markdown with inline charts, an artifact gallery, and a share button that persists the analysis to a shareable URL (`/share/[id]`).
+
+A memory card-matching game (`WaitingGame.tsx`) engages the user during the 60–90 second pipeline execution. The design system uses an Airbnb-inspired palette — coral `#FF5A5F`, teal `#00A699`, navy `#484848`, cream `#FFF8F0` — with DM Sans for body text and JetBrains Mono for code and trace output.
 
 ---
 
-## Tools and Sandboxing
+## 9. Deployment
 
-### `query_database(sql)` — SQL Execution
+The application runs as two independent Google Cloud Run services in `us-east1`. The backend is provisioned with 2 CPUs, 2 GB RAM, and a 600-second request timeout to accommodate the full pipeline duration. The frontend uses 1 CPU, 512 MB RAM, and a 60-second timeout. Both services scale from 0 to 3 instances. Session affinity is enabled on the backend to support WebSocket connections across Cloud Run's load balancer.
 
-**File:** `backend/tools/sql_runner.py`
-
-- DuckDB connection singleton initialized lazily in-memory
-- Three views registered at startup via `read_csv_auto(path, ignore_errors=true)`
-- **Read-only enforcement:** rejects any query starting with INSERT, UPDATE, DELETE, DROP, ALTER, or CREATE
-- Results capped at **500 rows** via `fetchmany(max_rows)`
-- Returns JSON: `{columns, row_count, data}`
-- Schema introspection via `information_schema` for both the API endpoint and agent prompt injection
-
-### `run_analysis_code(code)` / `create_visualization(code)` — Python Sandbox
-
-**File:** `backend/tools/code_executor.py`
-
-Both tools call the same `execute_python()` function, which runs agent-written Python in an isolated subprocess:
-
-- **Preamble** injects `matplotlib.use('Agg')`, `ARTIFACTS_DIR`, and `DATA_DIR` as pre-set variables
-- **Postamble** auto-saves any open matplotlib figures that the agent didn't explicitly save
-- **Execution** via `subprocess.run()` with a **120-second timeout**
-- **Output truncation:** stdout capped at 8000 chars, stderr at 4000
-- **Artifacts** collected from `ARTIFACTS_DIR/{run_id}/` after execution
-- Returns JSON: `{stdout, stderr, exit_code, artifacts}`
-
-### Allowed Imports
-
-```
-pandas, numpy, scipy, matplotlib, seaborn, duckdb,
-json, csv, math, statistics, collections, datetime,
-re, os, io, textwrap
-```
-
----
-
-## Frontend Architecture
-
-```mermaid
-graph TD
-    P["page.tsx<br/><i>Main Page</i>"]
-    S["share/[id]/page.tsx<br/><i>Share Page</i>"]
-
-    P --> H["Header"]
-    P --> DO["DataOverview"]
-    P --> SE["SchemaExplorer"]
-    P --> CI["ChatInput"]
-    P --> MB["MessageBubble"]
-    P --> PF["PipelineFlowchart"]
-    P --> WG["WaitingGame"]
-
-    MB --> MD["ReactMarkdown<br/><i>+ inline charts</i>"]
-    MB --> SB["ShareButton"]
-    MB --> TT["ThinkingTrace"]
-
-    TT --> SC["StageCard"]
-    SC --> SQL["SqlQueryBlock"]
-    SC --> QR["QueryResultSummary"]
-
-    S --> MB2["MessageBubble<br/><i>(read-only)</i>"]
-    S --> TT2["ThinkingTrace<br/><i>(read-only)</i>"]
-
-    style P fill:#FF5A5F,color:#fff
-    style S fill:#FF5A5F,color:#fff
-    style MB fill:#00A699,color:#fff
-    style TT fill:#6C5CE7,color:#fff
-```
-
-### Components
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| **Header** | `Header.tsx` | App header with "4 Agents" badge, animated pulse, and "New Question" reset button |
-| **DataOverview** | `DataOverview.tsx` | Live statistics cards (37K listings, 985K reviews, 230 neighbourhoods, 71 data fields) fetched from DuckDB at page load |
-| **SchemaExplorer** | `SchemaExplorer.tsx` | Expandable cards for each table showing all columns, types, and row counts |
-| **ChatInput** | `ChatInput.tsx` | Auto-resizing textarea with Enter-to-send, Shift+Enter for newline |
-| **MessageBubble** | `MessageBubble.tsx` | Renders user questions (coral gradient) and assistant answers (markdown + inline charts + artifact gallery + share button + trace) |
-| **PipelineFlowchart** | `PipelineFlowchart.tsx` | Fixed vertical 4-stage progress indicator with animated state transitions (pending → active → complete) |
-| **WaitingGame** | `WaitingGame.tsx` | Memory match game (8 emoji pairs) with timer and move counter — plays while the pipeline processes |
-| **ThinkingTrace** | `ThinkingTrace.tsx` | Expandable 4-stage execution timeline with SQL blocks, Python code, data previews, timing, and artifact thumbnails |
-| **SqlQueryBlock** | `SqlQueryBlock.tsx` | SQL syntax display with clickable table names that open schema popovers |
-| **QueryResultSummary** | `QueryResultSummary.tsx` | Row/column count badges and expandable data preview tables |
-| **ShareButton** | (in `MessageBubble.tsx`) | Creates a shareable URL via `POST /api/share`, renders inline link with copy-to-clipboard |
-
-### Design System
-
-- **Palette:** Airbnb-inspired — coral `#FF5A5F`, teal `#00A699`, navy `#484848`, warm gray `#767676`, cream `#FFF8F0`
-- **Fonts:** DM Sans (body, 400/500/600/700) + JetBrains Mono (code/trace, 400/500)
-- **Animations:** `fadeInUp` (message entrance), `pulse-dot` (thinking indicator), `pipelineNodePulse` (stage activity), memory card flip with 3D perspective
-- **Responsive:** Pipeline flowchart hidden on mobile (<768px), grid layouts adapt, max-width container at `4xl`
-
----
-
-## Tech Stack
-
-| Technology | Version | Why |
-|------------|---------|-----|
-| **Python** | 3.12 | Required for OpenAI Agents SDK typing features |
-| **OpenAI Agents SDK** | >=0.7.0 | First-class `Agent`, `function_tool`, `Runner.run_streamed()`, and `handoffs` primitives |
-| **FastAPI** | >=0.115 | Async-native REST + WebSocket support, automatic OpenAPI docs |
-| **DuckDB** | >=1.2 | In-process OLAP engine that reads CSV natively via `read_csv_auto()` — no database server needed |
-| **pandas** | >=2.2 | DataFrame manipulation in agent-generated analysis code |
-| **numpy** | >=1.26 | Numerical arrays for statistical computation |
-| **scipy** | >=1.14 | Advanced statistical tests (correlations, distributions, significance) |
-| **matplotlib** | >=3.9 | Low-level chart generation in sandboxed subprocess |
-| **seaborn** | >=0.13 | High-level statistical visualization built on matplotlib |
-| **Pydantic** | >=2.10 | Structured output schemas (`QueryResult`, `EDAFindings`) for typed data contracts |
-| **uvicorn** | >=0.34 | ASGI server with WebSocket support and hot-reload for development |
-| **python-dotenv** | >=1.0 | Environment variable management from `.env` files |
-| **Next.js** | 16.2.2 | React framework with App Router, SSR, standalone output for Docker |
-| **React** | 19.2.4 | Latest with `use()` hook for async params (share page) |
-| **TypeScript** | 5 | Type safety across frontend components and WebSocket messages |
-| **Tailwind CSS** | 4 | Utility-first CSS with custom design tokens in `globals.css` |
-| **react-markdown** | 10.1 | Markdown rendering with custom components for inline chart images |
-| **remark-gfm** | 4.0.1 | GitHub-Flavored Markdown: tables, bold, strikethrough, links |
-| **Docker** | Multi-stage | Separate build/runtime layers for minimal image size |
-| **Google Cloud Run** | Managed | Serverless containers with auto-scaling and WebSocket support via session affinity |
-| **Cloud Build** | CI/CD | 8-step automated pipeline: data pull → build → push → deploy for both services |
-
----
-
-## Deployment
+*Figure 4: Deployment architecture from data storage through CI/CD to production services.*
 
 ```mermaid
 graph LR
@@ -514,221 +278,85 @@ graph LR
     style GCS fill:#00A699,color:#fff
 ```
 
-### Cloud Build Pipeline (`cloudbuild.yaml`)
-
-| Step | Action |
-|------|--------|
-| 1 | Download CSV data from GCS bucket (`gs://agentic-ai-487000-airbnb-data/`) |
-| 2 | Build backend Docker image |
-| 3 | Push to Artifact Registry (`us-east1-docker.pkg.dev`) |
-| 4 | Deploy backend to Cloud Run (2 CPU, 2 GB, 600s timeout, secret: `OPENROUTER_API_KEY`) |
-| 5 | Capture backend URL for frontend build |
-| 6 | Build frontend with `NEXT_PUBLIC_BACKEND_URL` baked in at compile time |
-| 7 | Push frontend image |
-| 8 | Deploy frontend to Cloud Run (1 CPU, 512 MB, 60s timeout) |
-
-**Machine type:** E2_HIGHCPU_8 | **Build timeout:** 2400s | **Region:** us-east1
-
-### Local Development
-
-Data is mounted from the host filesystem. Artifacts persist across restarts. Both services hot-reload during development.
+An eight-step Cloud Build pipeline (`cloudbuild.yaml`) automates the entire deployment. It downloads the CSV data files from a GCS bucket, builds the backend Docker image (multi-stage, Python 3.12), pushes it to Artifact Registry, deploys the backend to Cloud Run, captures the backend URL, builds the frontend with `NEXT_PUBLIC_BACKEND_URL` baked in at compile time, pushes the frontend image, and deploys the frontend. The build runs on an E2_HIGHCPU_8 machine with a 2,400-second timeout. Data is baked into the backend Docker image at build time, so the running container requires no external data access.
 
 ---
 
-## API Reference
+## 10. Requirements
 
-### REST Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check — returns `{"status": "ok"}` |
-| `/api/schema` | GET | Returns DuckDB schema (tables, columns, types, row counts) as JSON |
-| `/api/analyze` | POST | Synchronous analysis — `{"question": "...", "history": [...]}` → `{answer, artifacts, trace}` |
-| `/api/share` | POST | Save conversation snapshot — `{"question", "answer", "artifacts", "trace"}` → `{"id"}` |
-| `/api/share/{id}` | GET | Retrieve shared conversation by ID |
-
-### WebSocket Endpoint
-
-**`/ws/analyze`** — Real-time streaming analysis with live trace events.
-
-| Message Type | Direction | Description |
-|-------------|-----------|-------------|
-| `status` | Server → Client | Progress update with current agent name and action |
-| `trace` | Server → Client | Agent execution step: handoff, tool call, tool output, or message |
-| `result` | Server → Client | Final answer with markdown content and artifact paths |
-| `error` | Server → Client | Error message (timeout, execution failure, etc.) |
-
----
-
-## Project Structure
+### Backend (`backend/requirements.txt`)
 
 ```
-airbnb/
-├── backend/
-│   ├── main.py                          # FastAPI app, pipeline orchestration, WebSocket streaming
-│   ├── agent_defs/                      # Agent definitions (OpenAI Agents SDK)
-│   │   ├── orchestrator.py              # Orchestrator (handoff routing) ← Multi-Agent Pattern
-│   │   ├── collector.py                 # Data Collector + query_database tool ← Collect Step
-│   │   ├── analyst.py                   # EDA Analyst + run_analysis_code tool ← EDA Step
-│   │   ├── hypothesizer.py              # Hypothesis Generator + create_visualization ← Hypothesize Step
-│   │   ├── presenter.py                 # Presenter + sub-agent handoffs ← Iterative Refinement
-│   │   └── config.py                    # Model selection (OpenAI / OpenRouter)
-│   ├── tools/
-│   │   ├── sql_runner.py                # DuckDB connection, SQL execution ← Tool Calling
-│   │   └── code_executor.py             # Sandboxed Python subprocess ← Code Execution
-│   ├── models/
-│   │   └── schemas.py                   # Pydantic models ← Structured Output
-│   ├── prompts/                         # Agent system prompts (markdown files)
-│   │   ├── __init__.py                  # Prompt loader (strips YAML frontmatter)
-│   │   ├── orchestrator.md
-│   │   ├── collector.md                 # Includes {SCHEMA_INFO} placeholder
-│   │   ├── analyst.md
-│   │   ├── hypothesizer.md
-│   │   └── presenter.md
-│   ├── artifacts/                       # Generated charts (runtime) ← Artifacts
-│   ├── shares/                          # Shareable conversation snapshots (runtime)
-│   ├── Dockerfile
-│   ├── pyproject.toml                   # Dependencies (uv)
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx               # Root layout (DM Sans + JetBrains Mono fonts)
-│   │   │   ├── page.tsx                 # Main page (landing, chat, WebSocket, pipeline)
-│   │   │   ├── share/[id]/page.tsx      # Shareable read-only analysis view
-│   │   │   └── globals.css              # Design system, CSS variables, animations
-│   │   ├── components/
-│   │   │   ├── Header.tsx
-│   │   │   ├── ChatInput.tsx
-│   │   │   ├── MessageBubble.tsx        # Markdown + charts + share + trace
-│   │   │   ├── ThinkingTrace.tsx        # 4-stage execution timeline (603 lines)
-│   │   │   ├── PipelineFlowchart.tsx    # Visual progress indicator
-│   │   │   ├── DataOverview.tsx         # Live dataset statistics
-│   │   │   ├── SchemaExplorer.tsx       # Interactive table schema browser
-│   │   │   ├── SqlQueryBlock.tsx        # SQL with clickable table schema popovers
-│   │   │   ├── QueryResultSummary.tsx   # Data preview tables
-│   │   │   └── WaitingGame.tsx          # Memory match game
-│   │   └── lib/
-│   │       └── pipeline-stages.ts       # Stage definitions and agent-to-stage mapping
-│   ├── Dockerfile
-│   └── package.json
-├── Sample Data/
-│   ├── listings.csv                     # 37K rows, 71 columns, 85 MB
-│   ├── reviews.csv                      # 985K rows, 6 columns, 295 MB
-│   └── neighbourhoods.csv               # 230 rows, 2 columns
-├── docker-compose.yml                   # Local development orchestration
-├── cloudbuild.yaml                      # GCP Cloud Build CI/CD (8 steps)
-└── README.md
+openai-agents>=0.7.0        # Agent framework: Agent, function_tool, Runner, handoffs
+fastapi>=0.115.0             # Async REST + WebSocket API server
+uvicorn[standard]>=0.34.0   # ASGI server with WebSocket support
+duckdb>=1.2.0                # In-process OLAP engine, native CSV reading
+pandas>=2.2.0                # DataFrame manipulation in agent-generated code
+numpy>=1.26.0                # Numerical arrays for statistical computation
+scipy>=1.14.0                # Advanced statistical tests and distributions
+matplotlib>=3.9.0            # Chart generation in sandboxed execution
+seaborn>=0.13.0              # High-level statistical visualization
+pydantic>=2.10.0             # Structured output schemas for typed data contracts
+python-dotenv>=1.0.0         # Environment variable management
+google-auth>=2.29.0          # GCP authentication for Vertex AI provider
 ```
+
+### Frontend (`frontend/package.json`)
+
+The frontend uses Next.js 16.2.2, React 19.2.4, TypeScript 5, Tailwind CSS 4, react-markdown 10.1.0, and remark-gfm 4.0.1.
 
 ---
 
-## Quick Start
+## 11. Grading Rubric Mapping
 
-### Prerequisites
+### Core Requirements (10 points)
 
-- Python 3.11+
-- Node.js 20+
-- An OpenAI API key **or** an OpenRouter API key
+| Requirement | Implementation | Key Files |
+|-------------|----------------|-----------|
+| **Frontend** (2 pts) | Next.js 16 / React 19 app with real-time WebSocket streaming, markdown rendering with inline charts, interactive schema explorer, pipeline progress flowchart, expandable agent trace, shareable results | `frontend/src/app/page.tsx`, `frontend/src/components/*.tsx` |
+| **Agent Framework** (1 pt) | OpenAI Agents SDK — `Agent`, `function_tool`, `Runner.run_streamed()`, `handoffs` | `backend/agent_defs/*.py` |
+| **Tool Calling** (1 pt) | 3 distinct tools: `query_database` (SQL), `run_analysis_code` (Python EDA), `create_visualization` (charts) | `backend/agent_defs/collector.py`, `analyst.py`, `hypothesizer.py`, `presenter.py` |
+| **Non-Trivial Dataset** (1 pt) | 37K listings (71 columns, 85 MB) + 985K reviews (295 MB) + 230 neighbourhoods — far too large to fit in context | `Sample Data/*.csv`, `backend/tools/sql_runner.py` |
+| **Multi-Agent Pattern** (2 pts) | Orchestrator-handoff pipeline: 5 agents with distinct prompts and responsibilities. Presenter has 2 sub-agents (Collector + Analyst) with bidirectional handoffs | `backend/agent_defs/presenter.py`, `backend/main.py` (`_run_pipeline`) |
+| **Deployed** (2 pts) | Docker containers on GCP Cloud Run, Cloud Build CI/CD pipeline, Artifact Registry | `cloudbuild.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` |
+| **README** (1 pt) | This document | `README.md` |
 
-### Local Development
+### Elective Features — Grab Bag (5 points)
 
-```bash
-# 1. Clone and enter the project
-cd airbnb
+| Feature | Implementation | Key Files |
+|---------|----------------|-----------|
+| **Code Execution** (2.5 pts) | Agents write Python at runtime, executed in sandboxed environment with 120s timeout, restricted import whitelist, auto-save of matplotlib figures | `backend/tools/code_executor.py` |
+| **Data Visualization** (2.5 pts) | Hypothesizer generates analytical charts; Presenter generates publication-quality charts with Airbnb color palette, insight-driven titles, and value annotations | `backend/agent_defs/hypothesizer.py`, `presenter.py` |
+| **Artifacts** (bonus) | Charts saved as PNG to `/artifacts/{run_id}/`, served as static files, embedded inline in markdown, persisted for sharing | `backend/tools/code_executor.py`, `backend/main.py` |
+| **Structured Output** (bonus) | Pydantic models (`QueryResult`, `EDAFindings`) for typed inter-agent data flow; JSON-structured tool outputs with `columns`, `row_count`, `exit_code`, `artifacts` | `backend/models/schemas.py` |
+| **Iterative Refinement** (2.5 pts) | EDA Analyst has both `run_analysis_code` and `query_database` tools — when analysis reveals data gaps, the Analyst queries the database directly and continues, creating an analyze → query → analyze loop | `backend/agent_defs/analyst.py`, `backend/prompts/analyst.md` |
 
-# 2. Backend
-cd backend
-cp .env.example .env          # Add your OPENAI_API_KEY or OPENROUTER_API_KEY
-uv sync                       # Install dependencies (or: pip install -r requirements.txt)
-uv run python main.py         # Starts at http://localhost:8000
+### Pipeline Steps (15 points)
 
-# 3. Frontend (new terminal)
-cd frontend
-npm install
-npm run dev                   # Starts at http://localhost:3000
-```
-
-### Docker
-
-```bash
-# Set your API key
-export OPENAI_API_KEY=sk-...
-# or: export OPENROUTER_API_KEY=sk-or-...
-
-docker-compose up --build
-# Frontend: http://localhost:3000
-# Backend:  http://localhost:8000
-```
-
-### GCP Cloud Run
-
-The project includes a full Cloud Build pipeline (`cloudbuild.yaml`) that downloads data from GCS, builds both Docker images, and deploys to Cloud Run:
-
-```bash
-gcloud builds submit --config=cloudbuild.yaml
-```
-
-### Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `OPENROUTER_API_KEY` | One of these | — | OpenRouter API key (recommended) |
-| `OPENAI_API_KEY` | required | — | Direct OpenAI API key |
-| `AGENT_MODEL` | No | `openai/gpt-4.1` (OpenRouter) or `gpt-4.1` (OpenAI) | Override the model used by all agents |
-| `DATA_DIR` | No | `../Sample Data` | Path to CSV data files |
-| `ARTIFACTS_DIR` | No | `./artifacts` | Path for generated chart outputs |
+The three pipeline steps — Collect, EDA, and Hypothesize — are described in detail in Section 4. In brief: the Data Collector dynamically generates SQL from natural language at runtime (Section 4.1), the EDA Analyst writes and executes Python code that computes statistics adapted to each question with iterative database refinement (Section 4.2), and the Hypothesis Generator forms data-grounded conclusions with specific evidence and supporting charts (Section 4.3). The Presenter (Section 4.4) synthesizes all three into a polished deliverable.
 
 ---
 
-## Prompt Engineering
+## 12. Evaluation and Results
 
-Each agent's behavior is governed by a dedicated markdown prompt file in `backend/prompts/`. The prompt system is a key architectural decision — not just system messages, but a structured engineering approach:
+The system was validated against a test suite of 20 diverse analytical questions spanning ten categories: pricing, hosts, text analysis, geography, availability, quality, trends, trust, market structure, and policy. Every question was processed end-to-end — producing SQL queries, statistical findings, a hypothesis, and at least one chart — with a 100% success rate.
 
-**Agent Specialization.** Each prompt is scoped to a single responsibility. The Collector is told *not* to provide conclusions. The Analyst is told *not* to create visualizations. The Presenter is told *never* to include Python code. This prevents agents from short-circuiting the pipeline.
+The `backend/evaluate.py` harness supports automated multi-model benchmarking. It runs the full pipeline against a configurable model, collects per-stage metrics (execution time, tool calls, agent steps, token usage), and scores results on five dimensions: success (25 points), chart quantity (25 points), answer length and depth (20 points), tool-call efficiency (15 points), and speed (15 points). Cost estimation is computed from per-model token pricing. Models benchmarked during development include GPT-4.1, GPT-5.4-mini, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash, and Claude Sonnet 4.6.
 
-**Context Threading.** Every stage receives all prior outputs as input. The Presenter has access to raw SQL results, statistical findings, and the full hypothesis — giving it maximum material to work with while being told *not* to add new analysis.
-
-**Dynamic Schema Injection.** The Collector prompt uses a `{SCHEMA_INFO}` placeholder that is filled at startup with the actual DuckDB schema (tables, columns, types, row counts). This ensures the agent always has accurate metadata.
-
-**Data Quality Hints.** All prompts include column-type warnings (price as VARCHAR, booleans as `'t'`/`'f'`, rate fields as percentage strings) so agents handle these correctly on the first attempt.
-
-**Error Recovery Protocol.** The Hypothesizer and Presenter prompts include identical instructions: check `exit_code`, read `stderr` tracebacks, fix the code, retry up to 3 times. If it still fails, describe the finding in words — never paste raw code into the response.
-
-**Visualization Standards.** Chart-generating agents are given explicit guidelines: Airbnb color palette, insight-driven titles ("Manhattan charges 40% more" not "Price by Borough"), 14pt+ labels, `bbox_inches='tight'`, DPI 150, and mandatory inline embedding with `![title](path)`.
-
-For the full prompt engineering documentation, see `backend/prompts/README.md`.
+Typical end-to-end latency ranges from 60 to 90 seconds, with the majority of time spent on the EDA Analyst and Presenter stages where code execution and chart generation occur.
 
 ---
 
-## Example Questions
+## 13. Conclusion
 
-The landing page presents 10 suggested questions spanning different analytical categories, with 6 randomly selected per session:
+This project demonstrates that a multi-agent architecture can reliably automate the first three steps of a data analysis lifecycle — data collection, exploratory analysis, and hypothesis formation — over a non-trivial real-world dataset. The four-stage pipeline design, with specialized agents scoped to single responsibilities and explicit behavioral constraints, produces consistent, data-grounded analytical briefings without human intervention between question and answer.
 
-| Category | Question |
-|----------|----------|
-| **Pricing** | How does pricing vary by room type across the five boroughs? |
-| **Hosts** | Do superhosts get better review scores than regular hosts? |
-| **Text Analysis** | What words appear most often in negative reviews? |
-| **Geographic** | What is the price distribution for listings near Times Square? |
-| **Availability** | What percentage of listings are instantly bookable in each borough? |
-| **Quality** | What share of listings in each borough have no reviews? |
-| **Trends** | How does review activity look month by month over time? |
-| **Trust** | Are there pricing differences between verified and unverified hosts? |
-| **Market** | Which hosts have the most listings across NYC? |
-| **Policy** | Which boroughs have the longest minimum stay requirements? |
+Key architectural decisions that contributed to system reliability include: procedural orchestration rather than LLM-based routing, context threading rather than conversational memory, dynamic schema injection rather than hardcoded metadata, and defensive post-processing (chart validation, answer cleaning, inline image injection) that catches agent failures gracefully.
 
-These questions were selected from a test suite of 20 candidates, validated against the full pipeline with a 100% success rate.
+The system satisfies all seven core course requirements and implements five elective features. Future work could explore parallel agent execution to reduce latency, integration of additional data sources (e.g., Census data or real-time pricing APIs) as a second retrieval method, and conversational memory across questions to enable follow-up analysis within a session.
 
 ---
 
-## Team
+Arjun Varma & Oranich Jamkachornkiat | Columbia University — Agentic AI, Spring 2026
 
-**Arjun Varma** and **Oranich Jamkachornkiat**
-
-Columbia University — Agentic AI, Spring 2026
-
-Data source: [Inside Airbnb](http://insideairbnb.com/) (NYC, 2022)
-
-Built with the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), [DuckDB](https://duckdb.org/), [FastAPI](https://fastapi.tiangolo.com/), [Next.js](https://nextjs.org/), and [Google Cloud Run](https://cloud.google.com/run).
+Data source: [Inside Airbnb](http://insideairbnb.com/) (NYC, 2022). Built with the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), [DuckDB](https://duckdb.org/), [FastAPI](https://fastapi.tiangolo.com/), [Next.js](https://nextjs.org/), and [Google Cloud Run](https://cloud.google.com/run).
