@@ -1,0 +1,251 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T03:14:34.444107+00:00",
+    "total_duration_s": 198.4,
+    "num_models": 1,
+    "num_questions": 3,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 3,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "google/gemini-2.5-flash",
+      "display_name": "Gemini 2.5 Flash",
+      "provider": "vertex",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 115.6,
+          "answer_len": 5309,
+          "answer_preview": "Across New York City, pricing for Airbnb listings varies significantly by both room type and borough, with Manhattan consistently commanding the highest average prices, while other boroughs offer more affordable options. The most spacious and private options, 'Entire home/apt' and 'Hotel room', are ",
+          "num_charts": 6,
+          "num_tool_calls": 7,
+          "num_agent_steps": 10,
+          "input_tokens": 37243,
+          "output_tokens": 8588,
+          "estimated_cost_usd": 0.010739,
+          "quality_score": 85,
+          "artifacts": [
+            "/artifacts/8d8ccba2/avg_price_by_room_type_borough.png",
+            "/artifacts/8d8ccba2/listing_counts_by_room_type_borough.png",
+            "/artifacts/8d8ccba2/price_distribution_by_room_type.png",
+            "/artifacts/711a6d71/entire_home_apt_avg_price_by_borough.png",
+            "/artifacts/711a6d71/hotel_room_avg_price_by_borough.png",
+            "/artifacts/711a6d71/private_room_avg_price_by_borough.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 6.691570520401001,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 4911,
+              "output_tokens": 492,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 7.44014835357666,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1751,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 63.23169159889221,
+              "tool_calls": 4,
+              "agent_steps": 3,
+              "input_tokens": 22479,
+              "output_tokens": 5522,
+              "artifacts": [
+                "/artifacts/8d8ccba2/avg_price_by_room_type_borough.png",
+                "/artifacts/8d8ccba2/listing_counts_by_room_type_borough.png",
+                "/artifacts/8d8ccba2/price_distribution_by_room_type.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 38.24680423736572,
+              "tool_calls": 1,
+              "agent_steps": 3,
+              "input_tokens": 8102,
+              "output_tokens": 2574,
+              "artifacts": [
+                "/artifacts/711a6d71/entire_home_apt_avg_price_by_borough.png",
+                "/artifacts/711a6d71/hotel_room_avg_price_by_borough.png",
+                "/artifacts/711a6d71/private_room_avg_price_by_borough.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 2,
+          "category": "Host Quality",
+          "question": "Do superhosts get better review scores than regular hosts?",
+          "status": "success",
+          "total_time_s": 19.9,
+          "answer_len": 153,
+          "answer_preview": "Superhosts consistently achieve higher review scores than regular hosts, demonstrating a strong correlation between host status and guest satisfaction.\n\n",
+          "num_charts": 0,
+          "num_tool_calls": 1,
+          "num_agent_steps": 8,
+          "input_tokens": 8407,
+          "output_tokens": 575,
+          "estimated_cost_usd": 0.001606,
+          "quality_score": 50,
+          "artifacts": [],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 3.0390193462371826,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 2997,
+              "output_tokens": 126,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 2.554971933364868,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1475,
+              "output_tokens": 248,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 8.728515863418579,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1641,
+              "output_tokens": 178,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 5.596330165863037,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 2294,
+              "output_tokens": 23,
+              "artifacts": [],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 3,
+          "category": "Temporal",
+          "question": "How has host sign-up activity changed over the years?",
+          "status": "success",
+          "total_time_s": 53.4,
+          "answer_len": 2947,
+          "answer_preview": "Host sign-up activity in NYC Airbnb rapidly expanded until 2015, followed by a general decline that was significantly impacted by the 2020 pandemic.\n\n## Rapid Growth Followed by Steady Decline\n\nNew host registrations in NYC experienced an initial surge from **10** in 2008 to a peak of **3,801** in 2",
+          "num_charts": 5,
+          "num_tool_calls": 3,
+          "num_agent_steps": 10,
+          "input_tokens": 17096,
+          "output_tokens": 4579,
+          "estimated_cost_usd": 0.005312,
+          "quality_score": 93,
+          "artifacts": [
+            "/artifacts/8a2fbcb3/cumulative_hosts_vs_listings.png",
+            "/artifacts/8a2fbcb3/new_host_signups_over_time.png",
+            "/artifacts/8a2fbcb3/superhost_vs_regular_signups.png",
+            "/artifacts/f13a106c/chart_2.png",
+            "/artifacts/f13a106c/yoy_host_signup_change.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 4.951519727706909,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3192,
+              "output_tokens": 322,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 5.619107961654663,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1668,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 21.15457057952881,
+              "tool_calls": 1,
+              "agent_steps": 3,
+              "input_tokens": 5004,
+              "output_tokens": 2732,
+              "artifacts": [
+                "/artifacts/8a2fbcb3/cumulative_hosts_vs_listings.png",
+                "/artifacts/8a2fbcb3/new_host_signups_over_time.png",
+                "/artifacts/8a2fbcb3/superhost_vs_regular_signups.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 21.694761037826538,
+              "tool_calls": 1,
+              "agent_steps": 3,
+              "input_tokens": 7232,
+              "output_tokens": 1525,
+              "artifacts": [
+                "/artifacts/f13a106c/chart_2.png",
+                "/artifacts/f13a106c/yoy_host_signup_change.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 63.0,
+        "avg_score": 76.0,
+        "avg_charts": 3.7,
+        "total_cost_usd": 0.017657,
+        "total_input_tokens": 62746,
+        "total_output_tokens": 13742
+      }
+    }
+  ]
+}
