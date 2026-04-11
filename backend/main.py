@@ -15,6 +15,7 @@ from agents import (
     MultiProvider,
     RunConfig,
     set_default_openai_client,
+    set_default_openai_key,
     set_tracing_disabled,
 )
 from runtime_config import get_cors_origins, load_project_dotenv
@@ -44,8 +45,9 @@ if not openrouter_key:
         "This project is currently configured to run through OpenRouter only."
     )
 
-# SDK internals may check OPENAI_API_KEY even with a custom provider
-os.environ.setdefault("OPENAI_API_KEY", openrouter_key)
+# Ensure SDK internals always find the key, even in fallback code paths
+os.environ["OPENAI_API_KEY"] = openrouter_key
+set_default_openai_key(openrouter_key)
 openrouter_client = AsyncOpenAI(
     api_key=openrouter_key,
     base_url="https://openrouter.ai/api/v1",

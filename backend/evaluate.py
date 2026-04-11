@@ -26,6 +26,7 @@ from agents import (
     Runner,
     MultiProvider,
     RunConfig,
+    set_default_openai_key,
     set_tracing_disabled,
 )
 from pipeline import (
@@ -99,7 +100,8 @@ def _create_openrouter_run_config() -> RunConfig:
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not set")
 
-    os.environ.setdefault("OPENAI_API_KEY", api_key)
+    os.environ["OPENAI_API_KEY"] = api_key
+    set_default_openai_key(api_key)
     client = AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
 
     return RunConfig(
