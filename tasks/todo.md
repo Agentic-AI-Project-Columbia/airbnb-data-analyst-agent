@@ -76,6 +76,39 @@
 
 ## 2026-04-11 OpenRouter Recheck
 
-- [ ] Run the same targeted 3-question evaluation on OpenRouter `openai/gpt-5.4-mini`.
-- [ ] Compare that run with the direct app pipeline behavior on the same provider.
-- [ ] Restate the assessment using only OpenRouter-backed evidence.
+- [x] Run the same targeted 3-question evaluation on OpenRouter `openai/gpt-5.4-mini`.
+- [x] Compare that run with the direct app pipeline behavior on the same provider.
+- [x] Restate the assessment using only OpenRouter-backed evidence.
+
+### Review
+
+- Verification run: `python evaluate.py --models openai/gpt-5.4-mini --questions 1 2 3 --output evaluation_openrouter_gpt54mini_20260411.json`
+- Output artifact: `backend/evaluation_openrouter_gpt54mini_20260411.json`
+- Result on OpenRouter `openai/gpt-5.4-mini`: 3/3 success, average time 90.6s, average charts 4.0, average answer length 2786 chars, average quality score 86/100.
+- Per-question summary:
+- Q1 Pricing: 89.1s, 4 charts, 9 tool calls, 2994 chars, score 86.
+- Q2 Host Quality: 102.6s, 4 charts, 5 tool calls, 2849 chars, score 85.
+- Q3 Temporal: 80.2s, 4 charts, 6 tool calls, 2514 chars, score 88.
+- This aligns much more closely with the direct app-pipeline trace on the same provider/model than with the earlier Gemini evaluation. On OpenRouter `gpt-5.4-mini`, the pipeline appears capable of producing the style of output the README is aiming at for at least this 3-question slice.
+- Updated takeaway: if the assessment is limited to OpenRouter `gpt-5.4-mini`, the project is a stronger resume artifact than the earlier mixed-provider read suggested. The remaining issue is not that the pipeline looks weak on this provider; it is that the README still overstates the public evidence unless the broader claimed evaluation is rerun and committed in a defensible form.
+
+## 2026-04-11 OpenRouter-Only README Update
+
+- [x] Restrict the backend runtime and evaluation defaults to OpenRouter-only operation.
+- [x] Update the README provider, dependency, execution, and evaluation sections to match the current implementation.
+- [x] Verify the updated runtime/docs path with targeted checks.
+- [ ] Commit only the relevant files and push the branch.
+
+### Review
+
+- `backend/main.py` now requires `OPENROUTER_API_KEY` and initializes only the OpenRouter provider path.
+- `backend/evaluate.py` now documents and defaults to OpenRouter-backed models only, and its built-in question suite now matches the intended 20-question evaluation scope.
+- `backend/.env.example`, `cloudbuild.yaml`, `backend/requirements.txt`, `backend/pyproject.toml`, and `backend/uv.lock` were aligned with the OpenRouter-only runtime.
+- `README.md` was updated to reflect the current execution model (subprocess, not thread), follow-up-history behavior, OpenRouter-only provider setup, single-stage backend Docker build, and the intended 20-question OpenRouter evaluation story.
+- Verification:
+- `uv lock`
+- `python -m py_compile backend/main.py backend/evaluate.py backend/agent_defs/config.py`
+- Import check for `main.MODEL_RUN_CONFIG`
+- Import check confirming `len(EVAL_QUESTIONS) == 20`
+- `python evaluate.py --models openai/gpt-5.4-mini --questions 1 --output evaluation_openrouter_smoke_after_readme.json`
+- Smoke result: Q1 succeeded in 68.1s with 3 charts, 3465 answer chars, 6 tool calls, and quality score 84.

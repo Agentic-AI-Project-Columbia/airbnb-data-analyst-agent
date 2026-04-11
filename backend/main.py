@@ -16,82 +16,41 @@ from openai import AsyncOpenAI
 
 from agents import (
     ItemHelpers,
-    ModelProvider,
     MultiProvider,
-    OpenAIChatCompletionsModel,
     RunConfig,
     set_default_openai_client,
     set_tracing_disabled,
 )
 
 # ---------------------------------------------------------------------------
-# Provider setup: Vertex AI (GCP) > OpenRouter > Direct OpenAI
+# Provider setup: OpenRouter only
 # ---------------------------------------------------------------------------
-gcp_project = os.environ.get("GCP_PROJECT_ID")
-gcp_location = os.environ.get("GCP_LOCATION", "us-central1")
 openrouter_key = os.environ.get("OPENROUTER_API_KEY")
-openai_key = os.environ.get("OPENAI_API_KEY")
-
-MODEL_RUN_CONFIG = None  # will be set by whichever provider is configured
 
 from agent_defs.config import DEFAULT_MODEL as _DEFAULT_MODEL
 
-# Route based on model name: google/ models go through Vertex AI, others through OpenRouter
-_use_vertex = _DEFAULT_MODEL.startswith("google/") and gcp_project
-_use_openrouter = not _use_vertex and openrouter_key
-
-if _use_vertex:
-    import google.auth
-    import google.auth.transport.requests
-
-    creds, _ = google.auth.default()
-    creds.refresh(google.auth.transport.requests.Request())
-
-    vertex_client = AsyncOpenAI(
-        api_key=creds.token,
-        base_url=(
-            f"https://{gcp_location}-aiplatform.googleapis.com"
-            f"/v1beta1/projects/{gcp_project}/locations/{gcp_location}"
-            f"/endpoints/openapi"
-        ),
+if not openrouter_key:
+    raise RuntimeError(
+        "OPENROUTER_API_KEY is required. "
+        "This project is currently configured to run through OpenRouter only."
     )
 
-    class _VertexProvider(ModelProvider):
-        """Routes all models through Vertex AI's Chat Completions endpoint."""
-        def get_model(self, model_name: str):
-            return OpenAIChatCompletionsModel(
-                model=model_name,
-                openai_client=vertex_client,
-            )
-
-    set_default_openai_client(vertex_client, use_for_tracing=False)
-    MODEL_RUN_CONFIG = RunConfig(model_provider=_VertexProvider())
-    set_tracing_disabled(True)
-    print(f"Using Vertex AI  (project={gcp_project}, location={gcp_location})")
-
-elif _use_openrouter:
-    # SDK internals may check OPENAI_API_KEY even with a custom provider
-    os.environ.setdefault("OPENAI_API_KEY", openrouter_key)
-    openrouter_client = AsyncOpenAI(
-        api_key=openrouter_key,
-        base_url="https://openrouter.ai/api/v1",
+# SDK internals may check OPENAI_API_KEY even with a custom provider
+os.environ.setdefault("OPENAI_API_KEY", openrouter_key)
+openrouter_client = AsyncOpenAI(
+    api_key=openrouter_key,
+    base_url="https://openrouter.ai/api/v1",
+)
+set_default_openai_client(openrouter_client, use_for_tracing=False)
+MODEL_RUN_CONFIG = RunConfig(
+    model_provider=MultiProvider(
+        openai_client=openrouter_client,
+        openai_prefix_mode="model_id",
+        unknown_prefix_mode="model_id",
     )
-    set_default_openai_client(openrouter_client, use_for_tracing=False)
-    MODEL_RUN_CONFIG = RunConfig(
-        model_provider=MultiProvider(
-            openai_client=openrouter_client,
-            openai_prefix_mode="model_id",
-            unknown_prefix_mode="model_id",
-        )
-    )
-    set_tracing_disabled(True)
-    print(f"Using OpenRouter  (model={_DEFAULT_MODEL})")
-
-elif openai_key:
-    print("Using direct OpenAI")
-
-else:
-    print("WARNING: No GCP_PROJECT_ID, OPENROUTER_API_KEY, or OPENAI_API_KEY found.")
+)
+set_tracing_disabled(True)
+print(f"Using OpenRouter  (model={_DEFAULT_MODEL})")
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware

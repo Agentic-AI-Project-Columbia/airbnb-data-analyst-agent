@@ -9,7 +9,7 @@ Columbia University — Agentic AI, Spring 2026
 
 ## Abstract
 
-This report describes a multi-agent data analysis system that accepts natural-language questions about New York City's Airbnb market and autonomously produces polished analytical briefings with publication-quality charts. The system operates over three tables sourced from Inside Airbnb — 37,257 active listings with 71 data dimensions, 985,674 guest reviews, and 230 neighbourhood-to-borough mappings — totaling approximately 380 MB of real-world data. A four-stage sequential pipeline, built on the OpenAI Agents SDK, orchestrates five specialized agents: a Data Collector that translates questions into DuckDB SQL, an EDA Analyst that writes and executes Python for statistical analysis with iterative database refinement, a Hypothesis Generator that forms data-grounded conclusions with analytical charts, and a Presenter that delivers a polished briefing with presentation-quality visualizations and can delegate to sub-agents for additional data. Each agent writes its own code at runtime and executes it in a sandboxed environment. The frontend streams every agent action in real time over WebSocket, rendering an interactive execution trace alongside the final answer. End-to-end latency is 60–90 seconds per question. The system was verified against a test suite of 20 diverse analytical questions with a 100% success rate, and satisfies all seven core course requirements alongside five elective features: code execution, data visualization, persistent artifacts, structured output, and iterative refinement.
+This report describes a multi-agent data analysis system that accepts natural-language questions about New York City's Airbnb market and autonomously produces polished analytical briefings with publication-quality charts. The system operates over three tables sourced from Inside Airbnb — 37,257 active listings with 71 data dimensions, 985,674 guest reviews, and 230 neighbourhood-to-borough mappings — totaling approximately 380 MB of real-world data. A four-stage sequential pipeline, built on the OpenAI Agents SDK, orchestrates five specialized agents: a Data Collector that translates questions into DuckDB SQL, an EDA Analyst that writes and executes Python for statistical analysis with iterative database refinement, a Hypothesis Generator that forms data-grounded conclusions with analytical charts, and a Presenter that delivers a polished briefing with presentation-quality visualizations and can delegate to sub-agents for additional data. Each agent writes its own code at runtime and executes it in a subprocess-based execution environment with import restrictions and artifact validation. The frontend streams every agent action in real time over WebSocket, rendering an interactive execution trace alongside the final answer. End-to-end latency is typically around 60–90 seconds per question when running `openai/gpt-5.4-mini` through OpenRouter. The system was verified against a test suite of 20 diverse analytical questions with a 100% success rate, and satisfies all seven core course requirements alongside five elective features: code execution, data visualization, persistent artifacts, structured outputs, and iterative refinement.
 
 ---
 
@@ -19,7 +19,7 @@ Analyzing a large, messy real-world dataset requires multiple distinct skills: w
 
 A multi-agent architecture addresses this by decomposing the analyst workflow into specialized stages, mirroring how a real data team operates. A data engineer writes the queries, a statistician runs the numbers, an analyst forms hypotheses, and a presenter creates the deliverable. Each agent is scoped to a single responsibility, with explicit behavioral constraints preventing it from short-circuiting the pipeline — the Collector must not draw conclusions, the Analyst must not create visualizations, and the Presenter must not include raw code.
 
-The course requires a multi-agent system that implements three steps of a data analysis lifecycle — *Collect* real-world data, perform *Exploratory Data Analysis*, and *Form and communicate a hypothesis with evidence* — with a frontend, tool calling, a non-trivial dataset, and deployment. This project fulfills those requirements and extends them with five elective features: runtime code execution in a sandboxed subprocess, dynamic data visualization via matplotlib and seaborn, persistent chart artifacts, Pydantic-based structured output for typed inter-agent data flow, and an iterative refinement loop where the EDA Analyst queries the database when its analysis reveals data gaps.
+The course requires a multi-agent system that implements three steps of a data analysis lifecycle — *Collect* real-world data, perform *Exploratory Data Analysis*, and *Form and communicate a hypothesis with evidence* — with a frontend, tool calling, a non-trivial dataset, and deployment. This project fulfills those requirements and extends them with five elective features: subprocess-based runtime code execution, dynamic data visualization via matplotlib and seaborn, persistent chart artifacts, Pydantic-based structured tool outputs, and an iterative refinement loop where the EDA Analyst queries the database when its analysis reveals data gaps.
 
 The goal is a fully autonomous pipeline: the user types one natural-language question and receives a complete analytical briefing — no intermediate human intervention between query and output.
 
@@ -77,9 +77,9 @@ The system follows a four-stage sequential pipeline orchestrated by procedural P
 
 The **OpenAI Agents SDK** was selected for its first-class primitives: `Agent` objects with dedicated system prompts, `function_tool` decorators for tool registration, `Runner.run_streamed()` for real-time event streaming, and `handoffs` for sub-agent delegation. Each of the five agents is a self-contained `Agent` instance with its own prompt file (`backend/prompts/*.md`), tool set, and behavioral constraints.
 
-The system supports three LLM providers through a priority cascade configured in `backend/main.py`. If a GCP project ID is set and the model name starts with `google/`, requests route to **Vertex AI**. Otherwise, if an OpenRouter API key is available, requests route to **OpenRouter** via its unified API. As a final fallback, requests go directly to **OpenAI**. The `MultiProvider` abstraction from the Agents SDK handles this routing transparently. The default model is `openai/gpt-5.4-mini` via OpenRouter, selected for its balance of capability, latency, and cost across a pipeline that makes 4–8 model calls per question.
+The system is currently configured to use **OpenRouter only** for model access. `backend/main.py` requires an `OPENROUTER_API_KEY` and routes all agent calls through OpenRouter's OpenAI-compatible API using the Agents SDK's `MultiProvider` wrapper. The default model is `openai/gpt-5.4-mini`, selected for its balance of capability, latency, and cost across a pipeline that makes 4–8 model calls per question.
 
-Agents do not communicate directly with each other. The orchestrator threads each stage's output as input to the next via explicit `_build_*_input()` functions — a pattern referred to as context threading. Each subsequent agent receives the full accumulated context from all prior stages, but agents are stateless across questions: every pipeline run starts fresh with no conversational memory.
+Agents do not communicate directly with each other. The orchestrator threads each stage's output as input to the next via explicit `_build_*_input()` functions — a pattern referred to as context threading. Each subsequent agent receives the full accumulated context from all prior stages. For follow-up questions, the frontend sends prior user/assistant turns and the backend resolves references such as "same" or "that result" before starting a fresh four-stage run, so conversational continuity exists at the request-construction layer rather than through persistent agent memory.
 
 The one exception to this purely sequential flow is the **Presenter**, which is the only agent that uses SDK-level handoffs. When it determines that additional data is needed to complete the briefing, it can delegate to two sub-agents — a `_presenter_collector` (for additional SQL queries) and a `_presenter_analyst` (for additional statistical computation) — who return results and hand control back. This creates a refinement loop within the final stage.
 
@@ -141,7 +141,7 @@ The agent generates different SQL for different questions — there are no templ
 
 ### 4.2 Stage 2: Exploratory Data Analysis
 
-The EDA Analyst (`backend/agent_defs/analyst.py`) receives the collected data and writes Python code to explore it. The `run_analysis_code` tool executes agent-written pandas, numpy, and scipy code in a sandboxed environment, returning stdout and any findings. The Analyst computes means, medians, percentiles, distributions, correlations, and standard deviations; segments data by meaningful dimensions (borough, room type, time period); and identifies outliers, anomalies, and patterns.
+The EDA Analyst (`backend/agent_defs/analyst.py`) receives the collected data and writes Python code to explore it. The `run_analysis_code` tool executes agent-written pandas, numpy, and scipy code in a subprocess-based execution environment, returning stdout and any findings. The Analyst computes means, medians, percentiles, distributions, correlations, and standard deviations; segments data by meaningful dimensions (borough, room type, time period); and identifies outliers, anomalies, and patterns.
 
 What distinguishes this stage is its **iterative refinement loop**. The Analyst has access to both `run_analysis_code` and `query_database`. When its initial analysis reveals data gaps — missing columns, wrong granularity, or a needed breakdown — the Analyst queries the database directly to fetch additional data and continues its computation. The database schema is injected into the Analyst's prompt at startup, giving it full awareness of available tables and columns for these follow-up queries. This creates an analyze → identify gap → query → analyze deeper cycle within a single stage. Different questions produce entirely different code and different findings. The Analyst focuses exclusively on analysis; visualization is deferred to Stage 3.
 
@@ -209,17 +209,17 @@ sequenceDiagram
 
 ## 5. Model Design Decisions
 
-**Model selection.** The default model is `openai/gpt-5.4-mini` via OpenRouter, configurable through the `AGENT_MODEL` environment variable. A mini-class model was selected because the pipeline makes 4–8 model calls per question (four stages plus potential sub-agent handoffs), and larger models would push per-question latency and cost beyond practical limits. GPT-5.4-mini provides sufficient capability for SQL generation, Python code writing, statistical reasoning, and narrative synthesis while keeping total pipeline execution under 90 seconds.
+**Model selection.** The default model is `openai/gpt-5.4-mini` via OpenRouter, configurable through the `AGENT_MODEL` environment variable. A mini-class model was selected because the pipeline makes 4–8 model calls per question (four stages plus potential sub-agent handoffs), and larger models would push per-question latency and cost beyond practical limits. GPT-5.4-mini provides sufficient capability for SQL generation, Python code writing, statistical reasoning, and narrative synthesis while keeping total pipeline execution around the 60–90 second range on the deployed system.
 
-**Provider abstraction.** The `MultiProvider` and `RunConfig` pattern from the OpenAI Agents SDK allows the same agent definitions to work across OpenRouter, Vertex AI, and direct OpenAI without code changes. This was important for deployment flexibility: Vertex AI offers GCP-native authentication for production, OpenRouter provides access to a wide range of models for experimentation, and direct OpenAI serves as a reliable fallback. The provider is selected automatically at startup based on which API keys are configured (`backend/agent_defs/config.py`, `backend/main.py`).
+**Provider configuration.** For now, the project is intentionally restricted to OpenRouter. `backend/main.py` requires `OPENROUTER_API_KEY`, initializes a single OpenRouter client, and routes all agent calls through the Agents SDK's OpenAI-compatible provider interface. This keeps local development, evaluation, and deployment aligned around one provider instead of maintaining separate routing paths.
 
 **Prompt architecture.** Each agent's behavior is governed by a dedicated markdown prompt file in `backend/prompts/`, loaded at startup by a utility function that strips YAML frontmatter. Prompts serve as the primary behavioral mechanism — they enforce role boundaries (the Collector must not draw conclusions; the Analyst must not create visualizations; the Presenter must never include Python code), encode data quality handling for the dataset's type quirks, and specify output format and chart standards. The prompt system is documented in `backend/prompts/README.md`.
 
 **Dynamic schema injection.** The Collector and Analyst prompts contain `{SCHEMA_INFO}` placeholders that are replaced at startup with the actual DuckDB schema — table names, column names, column types, and row counts. This ensures agents always operate with accurate metadata. If the dataset changes, the prompts update automatically without manual editing.
 
-**Context threading.** Agents are stateless across questions. Within a single pipeline run, context accumulates through explicit input construction via `_build_collector_input()`, `_build_analyst_input()`, `_build_hypothesizer_input()`, and `_build_presenter_input()` functions. Each function assembles the question, relevant prior outputs, and stage-specific instructions. This is deliberate: it avoids context window bloat from conversational memory and makes each pipeline run independently reproducible.
+**Context threading.** Within a single pipeline run, context accumulates through explicit input construction via `_build_collector_input()`, `_build_analyst_input()`, `_build_hypothesizer_input()`, and `_build_presenter_input()` functions. Each function assembles the question, relevant prior outputs, and stage-specific instructions. For follow-ups, the frontend sends recent conversation history and the backend resolves references before constructing the new run input. This keeps the agents themselves simple while still supporting conversational continuity at the application layer.
 
-**Multi-model evaluation.** The project includes an evaluation harness (`backend/evaluate.py`) capable of running the full pipeline against multiple models and scoring results on success, chart quality, answer length, tool-call efficiency, and speed. Models benchmarked include GPT-4.1, GPT-5.4-mini, Gemini 2.5 Pro, Gemini 2.5 Flash, and Claude Sonnet 4.6, with per-model cost estimation based on token pricing.
+**OpenRouter evaluation.** The project includes an evaluation harness (`backend/evaluate.py`) capable of running the full pipeline against a configurable set of OpenRouter-backed models and scoring results on success, chart quality, answer length, tool-call efficiency, and speed. The current reported benchmark run uses `openai/gpt-5.4-mini`; the harness can also be pointed at other OpenRouter model IDs for comparison, with per-model cost estimation based on token pricing.
 
 ---
 
@@ -229,7 +229,7 @@ The system uses three tools, all registered via the OpenAI Agents SDK's `@functi
 
 **`query_database(sql)`** wraps DuckDB, an in-process OLAP engine that reads CSV files natively via `read_csv_auto()` with no ETL step (`backend/tools/sql_runner.py`). DuckDB was chosen over SQLite (row-oriented, poor at analytical queries) and PostgreSQL (requires an external server) because it handles columnar analytical workloads efficiently in a single process. A read-only enforcement layer rejects any query containing INSERT, UPDATE, DELETE, DROP, ALTER, or CREATE. Results are capped at 500 rows via `fetchmany()`. The connection is a thread-safe singleton initialized lazily on first access. Schema introspection via `information_schema` powers both the agent prompt injection and the frontend's interactive Schema Explorer (`GET /api/schema`).
 
-**`run_analysis_code(code)` and `create_visualization(code)`** both call the same `execute_python()` function in `backend/tools/code_executor.py`. Agent-written Python runs in a daemon thread with a 120-second timeout. A preamble automatically injects `matplotlib.use('Agg')` (non-interactive backend), `ARTIFACTS_DIR`, and `DATA_DIR` as pre-set variables. A postamble auto-saves any open matplotlib figures that the agent did not explicitly save, preventing chart loss. An import whitelist restricts available modules to: pandas, numpy, scipy, matplotlib, seaborn, duckdb, json, csv, math, statistics, collections, datetime, re, os, io, and textwrap. Output is truncated (8,000 characters stdout, 4,000 characters stderr) to prevent context window overflow. Generated artifacts are persisted to `/artifacts/{run_id}/` and served as static files for frontend rendering.
+**`run_analysis_code(code)` and `create_visualization(code)`** both call the same `execute_python()` function in `backend/tools/code_executor.py`. Agent-written Python runs in a subprocess with a 120-second timeout. A preamble automatically injects `matplotlib.use('Agg')` (non-interactive backend), `ARTIFACTS_DIR`, and `DATA_DIR` as pre-set variables, and those same paths are also exported into the subprocess environment for code that reads from `os.environ`. A postamble auto-saves any open matplotlib figures that the agent did not explicitly save, preventing chart loss. An import whitelist restricts available modules to: pandas, numpy, scipy, matplotlib, seaborn, duckdb, json, csv, math, statistics, collections, datetime, re, os, io, and textwrap. Output is truncated (8,000 characters stdout, 4,000 characters stderr) to prevent context window overflow, and visualization runs are treated as failures if they do not actually produce artifact files. Generated artifacts are persisted to `/artifacts/{run_id}/` and served as static files for frontend rendering.
 
 ---
 
@@ -278,7 +278,7 @@ graph LR
     style GCS fill:#00A699,color:#fff
 ```
 
-An eight-step Cloud Build pipeline (`cloudbuild.yaml`) automates the entire deployment. It downloads the CSV data files from a GCS bucket, builds the backend Docker image (multi-stage, Python 3.12), pushes it to Artifact Registry, deploys the backend to Cloud Run, captures the backend URL, builds the frontend with `NEXT_PUBLIC_BACKEND_URL` baked in at compile time, pushes the frontend image, and deploys the frontend. The build runs on an E2_HIGHCPU_8 machine with a 2,400-second timeout. Data is baked into the backend Docker image at build time, so the running container requires no external data access.
+An eight-step Cloud Build pipeline (`cloudbuild.yaml`) automates the entire deployment. It downloads the CSV data files from a GCS bucket, builds the backend Docker image (single-stage, Python 3.12), pushes it to Artifact Registry, deploys the backend to Cloud Run with `OPENROUTER_API_KEY` injected as an environment variable, captures the backend URL, builds the frontend with `NEXT_PUBLIC_BACKEND_URL` baked in at compile time, pushes the frontend image, and deploys the frontend. The build runs on an E2_HIGHCPU_8 machine with a 2,400-second timeout. Data is baked into the backend Docker image at build time, so the running container requires no external data access.
 
 ---
 
@@ -288,17 +288,17 @@ An eight-step Cloud Build pipeline (`cloudbuild.yaml`) automates the entire depl
 
 ```
 openai-agents>=0.7.0        # Agent framework: Agent, function_tool, Runner, handoffs
+openai>=1.0.0              # OpenAI-compatible client used against OpenRouter
 fastapi>=0.115.0             # Async REST + WebSocket API server
 uvicorn[standard]>=0.34.0   # ASGI server with WebSocket support
 duckdb>=1.2.0                # In-process OLAP engine, native CSV reading
 pandas>=2.2.0                # DataFrame manipulation in agent-generated code
 numpy>=1.26.0                # Numerical arrays for statistical computation
 scipy>=1.14.0                # Advanced statistical tests and distributions
-matplotlib>=3.9.0            # Chart generation in sandboxed execution
+matplotlib>=3.9.0            # Chart generation in subprocess execution
 seaborn>=0.13.0              # High-level statistical visualization
-pydantic>=2.10.0             # Structured output schemas for typed data contracts
+pydantic>=2.10.0             # Structured schemas for tool outputs and metadata
 python-dotenv>=1.0.0         # Environment variable management
-google-auth>=2.29.0          # GCP authentication for Vertex AI provider
 ```
 
 ### Frontend (`frontend/package.json`)
@@ -325,10 +325,10 @@ The frontend uses Next.js 16.2.2, React 19.2.4, TypeScript 5, Tailwind CSS 4, re
 
 | Feature | Implementation | Key Files |
 |---------|----------------|-----------|
-| **Code Execution** (2.5 pts) | Agents write Python at runtime, executed in sandboxed environment with 120s timeout, restricted import whitelist, auto-save of matplotlib figures | `backend/tools/code_executor.py` |
+| **Code Execution** (2.5 pts) | Agents write Python at runtime, executed in a subprocess with a 120s timeout, restricted import whitelist, artifact validation, and auto-save of matplotlib figures | `backend/tools/code_executor.py` |
 | **Data Visualization** (2.5 pts) | Hypothesizer generates analytical charts; Presenter generates publication-quality charts with Airbnb color palette, insight-driven titles, and value annotations | `backend/agent_defs/hypothesizer.py`, `presenter.py` |
 | **Artifacts** (bonus) | Charts saved as PNG to `/artifacts/{run_id}/`, served as static files, embedded inline in markdown, persisted for sharing | `backend/tools/code_executor.py`, `backend/main.py` |
-| **Structured Output** (bonus) | Pydantic models (`QueryResult`, `EDAFindings`) for typed inter-agent data flow; JSON-structured tool outputs with `columns`, `row_count`, `exit_code`, `artifacts` | `backend/models/schemas.py` |
+| **Structured Output** (bonus) | Pydantic models (`QueryResult`, `EDAFindings`) for structured tool payloads and metadata; JSON-structured tool outputs with `columns`, `row_count`, `exit_code`, `artifacts` | `backend/models/schemas.py` |
 | **Iterative Refinement** (2.5 pts) | EDA Analyst has both `run_analysis_code` and `query_database` tools — when analysis reveals data gaps, the Analyst queries the database directly and continues, creating an analyze → query → analyze loop | `backend/agent_defs/analyst.py`, `backend/prompts/analyst.md` |
 
 ### Pipeline Steps (15 points)
@@ -339,9 +339,9 @@ The three pipeline steps — Collect, EDA, and Hypothesize — are described in 
 
 ## 12. Evaluation and Results
 
-The system was validated against a test suite of 20 diverse analytical questions spanning ten categories: pricing, hosts, text analysis, geography, availability, quality, trends, trust, market structure, and policy. Every question was processed end-to-end — producing SQL queries, statistical findings, a hypothesis, and at least one chart — with a 100% success rate.
+The system was validated against a test suite of 20 diverse analytical questions spanning pricing, hosts, text analysis, geography, amenities, availability, quality, trends, trust, market structure, and policy. Every question was processed end-to-end — producing SQL queries, statistical findings, a hypothesis, and at least one chart — with a 100% success rate.
 
-The `backend/evaluate.py` harness supports automated multi-model benchmarking. It runs the full pipeline against a configurable model, collects per-stage metrics (execution time, tool calls, agent steps, token usage), and scores results on five dimensions: success (25 points), chart quantity (25 points), answer length and depth (20 points), tool-call efficiency (15 points), and speed (15 points). Cost estimation is computed from per-model token pricing. Models benchmarked during development include GPT-4.1, GPT-5.4-mini, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash, and Claude Sonnet 4.6.
+The `backend/evaluate.py` harness supports automated benchmarking over the same 20-question suite. It runs the full pipeline against a configurable OpenRouter model, collects per-stage metrics (execution time, tool calls, agent steps, token usage), and scores results on five dimensions: success (25 points), chart quantity (25 points), answer length and depth (20 points), tool-call efficiency (15 points), and speed (15 points). Cost estimation is computed from per-model token pricing. The primary reported run uses `openai/gpt-5.4-mini`, and the harness can also be pointed at other OpenRouter model IDs for comparison.
 
 Typical end-to-end latency ranges from 60 to 90 seconds, with the majority of time spent on the EDA Analyst and Presenter stages where code execution and chart generation occur.
 
@@ -349,11 +349,11 @@ Typical end-to-end latency ranges from 60 to 90 seconds, with the majority of ti
 
 ## 13. Conclusion
 
-This project demonstrates that a multi-agent architecture can reliably automate the first three steps of a data analysis lifecycle — data collection, exploratory analysis, and hypothesis formation — over a non-trivial real-world dataset. The four-stage pipeline design, with specialized agents scoped to single responsibilities and explicit behavioral constraints, produces consistent, data-grounded analytical briefings without human intervention between question and answer.
+This project demonstrates that a multi-agent architecture can reliably automate the first three steps of a data analysis lifecycle — data collection, exploratory analysis, and hypothesis formation — over a non-trivial real-world dataset. The four-stage pipeline design, with specialized agents scoped to single responsibilities and explicit behavioral constraints, produces consistent, data-grounded analytical briefings without human intervention between question and answer when run on the current OpenRouter-backed configuration.
 
-Key architectural decisions that contributed to system reliability include: procedural orchestration rather than LLM-based routing, context threading rather than conversational memory, dynamic schema injection rather than hardcoded metadata, and defensive post-processing (chart validation, answer cleaning, inline image injection) that catches agent failures gracefully.
+Key architectural decisions that contributed to system reliability include: procedural orchestration rather than LLM-based routing, explicit context threading with lightweight follow-up history resolution, dynamic schema injection rather than hardcoded metadata, and defensive post-processing (chart validation, answer cleaning, inline image injection) that catches agent failures gracefully.
 
-The system satisfies all seven core course requirements and implements five elective features. Future work could explore parallel agent execution to reduce latency, integration of additional data sources (e.g., Census data or real-time pricing APIs) as a second retrieval method, and conversational memory across questions to enable follow-up analysis within a session.
+The system satisfies all seven core course requirements and implements five elective features. Future work could explore parallel agent execution to reduce latency, integration of additional data sources (e.g., Census data or real-time pricing APIs) as a second retrieval method, and richer cross-session memory beyond the current conversation-history threading used for follow-up questions.
 
 ---
 

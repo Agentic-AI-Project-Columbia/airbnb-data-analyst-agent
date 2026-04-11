@@ -1,11 +1,11 @@
 """
-Multi-Model Evaluation Pipeline
-================================
-Standalone script to compare LLM models on the Airbnb multi-agent pipeline.
+OpenRouter Evaluation Pipeline
+==============================
+Standalone script to compare OpenRouter-backed models on the Airbnb multi-agent pipeline.
 
 Usage:
     python evaluate.py                                    # Run all models, all questions
-    python evaluate.py --models "google/gemini-2.5-pro"   # Single model smoke test
+    python evaluate.py --models "openai/gpt-5.4-mini"     # Single model smoke test
     python evaluate.py --questions 1                      # Single question
 """
 
@@ -30,9 +30,7 @@ from agents import (
     Agent,
     Runner,
     ItemHelpers,
-    ModelProvider,
     MultiProvider,
-    OpenAIChatCompletionsModel,
     RunConfig,
     set_tracing_disabled,
 )
@@ -47,32 +45,40 @@ set_tracing_disabled(True)
 class ModelSpec:
     model_id: str
     display_name: str
-    provider_type: str  # "vertex" | "openrouter"
+    provider_type: str = "openrouter"
     cost_per_1k_input: float = 0.0   # USD
     cost_per_1k_output: float = 0.0  # USD
 
 
 EVAL_MODELS: list[ModelSpec] = [
-    # GCP Vertex AI
-    ModelSpec("google/gemini-2.5-pro", "Gemini 2.5 Pro", "vertex", 0.00125, 0.005),
-    ModelSpec("google/gemini-2.5-flash", "Gemini 2.5 Flash", "vertex", 0.00015, 0.0006),
-    ModelSpec("google/gemini-2.0-flash", "Gemini 2.0 Flash", "vertex", 0.0001, 0.0004),
-    # OpenRouter
-    ModelSpec("openai/gpt-4.1", "GPT-4.1", "openrouter", 0.002, 0.008),
-    ModelSpec("openai/gpt-4.1-nano", "GPT-4.1 Nano", "openrouter", 0.0001, 0.0004),
-    ModelSpec("openai/gpt-5.4-mini", "GPT-5.4 Mini", "openrouter", 0.0005, 0.002),
-    ModelSpec("anthropic/claude-sonnet-4-6", "Claude Sonnet 4.6", "openrouter", 0.003, 0.015),
-    ModelSpec("anthropic/claude-opus-4-6", "Claude Opus 4.6", "openrouter", 0.015, 0.075),
+    ModelSpec("openai/gpt-4.1", "GPT-4.1", cost_per_1k_input=0.002, cost_per_1k_output=0.008),
+    ModelSpec("openai/gpt-4.1-nano", "GPT-4.1 Nano", cost_per_1k_input=0.0001, cost_per_1k_output=0.0004),
+    ModelSpec("openai/gpt-5.4-mini", "GPT-5.4 Mini", cost_per_1k_input=0.0005, cost_per_1k_output=0.002),
+    ModelSpec("anthropic/claude-sonnet-4-6", "Claude Sonnet 4.6", cost_per_1k_input=0.003, cost_per_1k_output=0.015),
+    ModelSpec("anthropic/claude-opus-4-6", "Claude Opus 4.6", cost_per_1k_input=0.015, cost_per_1k_output=0.075),
 ]
 
 EVAL_QUESTIONS = [
     {"id": 1, "category": "Pricing",      "question": "How does pricing vary by room type across the five boroughs?"},
-    {"id": 2, "category": "Host Quality",  "question": "Do superhosts get better review scores than regular hosts?"},
-    {"id": 3, "category": "Temporal",      "question": "How has host sign-up activity changed over the years?"},
-    {"id": 4, "category": "Availability",  "question": "Which neighbourhoods have the highest and lowest availability throughout the year?"},
-    {"id": 5, "category": "Reviews",       "question": "What are the most common complaints in guest reviews?"},
-    {"id": 6, "category": "Geographic",    "question": "How does the density of listings compare across boroughs and what types dominate each area?"},
-    {"id": 7, "category": "Amenities",     "question": "Do listings with more amenities charge higher prices and get better reviews?"},
+    {"id": 2, "category": "Host Concentration", "question": "What are the top 10 neighbourhoods with the most listings per host?"},
+    {"id": 3, "category": "Host Quality",  "question": "Do superhosts get better review scores than regular hosts?"},
+    {"id": 4, "category": "Policy",        "question": "Which boroughs have the longest minimum stay requirements?"},
+    {"id": 5, "category": "Text Analysis", "question": "What words appear most often in negative reviews?"},
+    {"id": 6, "category": "Temporal",      "question": "How has host sign-up activity changed over the years?"},
+    {"id": 7, "category": "Geographic",    "question": "What is the price distribution for listings near Times Square?"},
+    {"id": 8, "category": "Amenities",     "question": "Which amenities are most common in top-rated listings?"},
+    {"id": 9, "category": "Host Behavior", "question": "How does host response time affect booking availability?"},
+    {"id": 10, "category": "Availability", "question": "What percentage of listings are instantly bookable in each borough?"},
+    {"id": 11, "category": "Trust",        "question": "Are there pricing differences between verified and unverified hosts?"},
+    {"id": 12, "category": "Property Types", "question": "What property types have the highest review volume per listing?"},
+    {"id": 13, "category": "Intra-Borough", "question": "How do review scores differ between Manhattan neighbourhoods?"},
+    {"id": 14, "category": "Correlation",  "question": "What is the relationship between listing price and number of reviews?"},
+    {"id": 15, "category": "Market",       "question": "Which hosts have the most listings across NYC?"},
+    {"id": 16, "category": "Features",     "question": "How do accommodation capacity and bedrooms relate to price?"},
+    {"id": 17, "category": "Quality Gap",  "question": "What share of listings in each borough have no reviews?"},
+    {"id": 18, "category": "Seasonal",     "question": "How does review activity look month by month over time?"},
+    {"id": 19, "category": "Targeted Text", "question": "What do guests say about cleanliness in Brooklyn reviews?"},
+    {"id": 20, "category": "Host Policy",  "question": "How does host acceptance rate vary between room types?"},
 ]
 
 STAGE_TIMEOUT = 180   # seconds per stage
@@ -83,41 +89,13 @@ PIPELINE_TIMEOUT = 420  # seconds total
 # Provider factory
 # ---------------------------------------------------------------------------
 
-def _create_vertex_run_config() -> RunConfig:
-    """Create a RunConfig for Vertex AI with a fresh GCP token."""
-    import google.auth
-    import google.auth.transport.requests
-
-    gcp_project = os.environ.get("GCP_PROJECT_ID")
-    gcp_location = os.environ.get("GCP_LOCATION", "us-central1")
-    if not gcp_project:
-        raise RuntimeError("GCP_PROJECT_ID not set")
-
-    creds, _ = google.auth.default()
-    creds.refresh(google.auth.transport.requests.Request())
-
-    client = AsyncOpenAI(
-        api_key=creds.token,
-        base_url=(
-            f"https://{gcp_location}-aiplatform.googleapis.com"
-            f"/v1beta1/projects/{gcp_project}/locations/{gcp_location}"
-            f"/endpoints/openapi"
-        ),
-    )
-
-    class _VertexProvider(ModelProvider):
-        def get_model(self, model_name: str):
-            return OpenAIChatCompletionsModel(model=model_name, openai_client=client)
-
-    return RunConfig(model_provider=_VertexProvider())
-
-
 def _create_openrouter_run_config() -> RunConfig:
     """Create a RunConfig for OpenRouter."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not set")
 
+    os.environ.setdefault("OPENAI_API_KEY", api_key)
     client = AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
 
     return RunConfig(
@@ -130,12 +108,9 @@ def _create_openrouter_run_config() -> RunConfig:
 
 
 def create_run_config(spec: ModelSpec) -> RunConfig:
-    if spec.provider_type == "vertex":
-        return _create_vertex_run_config()
-    elif spec.provider_type == "openrouter":
-        return _create_openrouter_run_config()
-    else:
+    if spec.provider_type != "openrouter":
         raise ValueError(f"Unknown provider: {spec.provider_type}")
+    return _create_openrouter_run_config()
 
 
 # ---------------------------------------------------------------------------
