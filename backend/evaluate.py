@@ -19,21 +19,25 @@ import argparse
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
-
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
-
 sys.path.insert(0, os.path.dirname(__file__))
 
 from openai import AsyncOpenAI
 from agents import (
-    Agent,
     Runner,
-    ItemHelpers,
     MultiProvider,
     RunConfig,
     set_tracing_disabled,
 )
+from pipeline import (
+    build_analyst_input,
+    build_collector_input,
+    build_hypothesis_input,
+    build_presenter_input,
+    create_pipeline_agents,
+)
+from runtime_config import load_project_dotenv
+
+load_project_dotenv()
 
 set_tracing_disabled(True)
 
@@ -116,177 +120,6 @@ def create_run_config(spec: ModelSpec) -> RunConfig:
 # ---------------------------------------------------------------------------
 # Agent factory
 # ---------------------------------------------------------------------------
-
-def create_agents(model_id: str) -> dict:
-    """Create a fresh set of pipeline agents for the given model."""
-    from agents import function_tool
-    from prompts import load_prompt
-    from tools.sql_runner import run_sql, get_schema_description
-    from tools.code_executor import execute_python
-
-    schema_desc = get_schema_description()
-
-    collector_instructions = load_prompt("collector").format(SCHEMA_INFO=schema_desc)
-    analyst_instructions = load_prompt("analyst").replace("{SCHEMA_INFO}", schema_desc)
-    hypothesizer_instructions = load_prompt("hypothesizer").replace("{SCHEMA_INFO}", schema_desc)
-    presenter_instructions = load_prompt("presenter").replace("{SCHEMA_INFO}", schema_desc)
-
-    # ---- Tools (need unique names per agent set to avoid collisions) ----
-    @function_tool
-    def collector_query_db(sql: str) -> str:
-        """Execute a SQL query against the NYC Airbnb DuckDB database."""
-        return run_sql(sql)
-
-    @function_tool
-    def analyst_query_db(sql: str) -> str:
-        """Execute a SQL query against the NYC Airbnb DuckDB database for iterative analysis."""
-        return run_sql(sql)
-
-    @function_tool
-    def analyst_run_code(code: str) -> str:
-        """Execute Python code for exploratory data analysis."""
-        return execute_python(code)
-
-    @function_tool
-    def hyp_create_viz(code: str) -> str:
-        """Execute Python code to generate data visualizations."""
-        return execute_python(code, require_artifacts=True)
-
-    @function_tool
-    def pres_create_viz(code: str) -> str:
-        """Execute Python code to generate presentation-quality visualizations."""
-        return execute_python(code, require_artifacts=True)
-
-    @function_tool
-    def pres_query_db(sql: str) -> str:
-        """Execute a SQL query against the NYC Airbnb DuckDB database."""
-        return run_sql(sql)
-
-    @function_tool
-    def pres_run_code(code: str) -> str:
-        """Execute Python code for data analysis."""
-        return execute_python(code)
-
-    # ---- Agents ----
-    collector = Agent(
-        name="Data Collector",
-        instructions=collector_instructions,
-        tools=[collector_query_db],
-        model=model_id,
-    )
-    analyst = Agent(
-        name="EDA Analyst",
-        instructions=analyst_instructions,
-        tools=[analyst_run_code, analyst_query_db],
-        model=model_id,
-    )
-    hypothesizer = Agent(
-        name="Hypothesis Generator",
-        instructions=hypothesizer_instructions,
-        tools=[hyp_create_viz],
-        model=model_id,
-    )
-
-    # Presenter with sub-agents
-    _pres_collector = Agent(
-        name="Data Collector",
-        instructions=(
-            schema_desc + "\n\n"
-            "You are assisting the Presenter agent. Run the SQL query needed to get "
-            "the requested data, return the results, then hand off back to the Presenter."
-        ),
-        tools=[pres_query_db],
-        model=model_id,
-    )
-    _pres_analyst = Agent(
-        name="EDA Analyst",
-        instructions=(
-            "You are assisting the Presenter agent. Run the requested Python analysis, "
-            "return the results, then hand off back to the Presenter.\n"
-            "DATA_DIR and ARTIFACTS_DIR are pre-set variables available in your code."
-        ),
-        tools=[pres_run_code],
-        model=model_id,
-    )
-    presenter = Agent(
-        name="Presenter",
-        instructions=presenter_instructions,
-        tools=[pres_create_viz],
-        handoffs=[_pres_collector, _pres_analyst],
-        model=model_id,
-    )
-    _pres_collector.handoffs = [presenter]
-    _pres_analyst.handoffs = [presenter]
-
-    return {
-        "collector": collector,
-        "analyst": analyst,
-        "hypothesizer": hypothesizer,
-        "presenter": presenter,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Pipeline helpers (replicated from main.py, no imports from main)
-# ---------------------------------------------------------------------------
-
-def _build_collector_input(question: str) -> str:
-    return (
-        "Stage 1 of 4: Data Collection.\n"
-        "Collect only the data needed to answer the request.\n"
-        "Do not provide the final answer.\n\n"
-        f"Resolved user request:\n{question}"
-    )
-
-
-def _build_analyst_input(question: str, collector_output: str) -> str:
-    return (
-        "Stage 2 of 4: Exploratory Data Analysis.\n"
-        "Use the collected data below to compute findings, patterns, and caveats.\n"
-        "Do not provide the final polished user answer yet.\n\n"
-        f"Resolved user request:\n{question}\n\n"
-        f"Collected data:\n{collector_output}"
-    )
-
-
-def _build_hypothesis_input(question: str, collector_output: str, analyst_output: str) -> str:
-    return (
-        "Stage 3 of 4: Hypothesis and visualization.\n"
-        "Use the collected data and analyst findings to form a hypothesis with evidence.\n"
-        "Generate visualizations to support key findings.\n"
-        "Do not worry about polishing the final output - that happens next.\n\n"
-        f"Resolved user request:\n{question}\n\n"
-        f"Collected data:\n{collector_output}\n\n"
-        f"Analyst findings:\n{analyst_output}"
-    )
-
-
-def _safe_truncate(text: str, limit: int = 4000) -> str:
-    if len(text) <= limit:
-        return text
-    return text[:limit] + f"\n... ({len(text) - limit} chars truncated)"
-
-
-def _build_presenter_input(question: str, collector_output: str, analyst_output: str,
-                           hypothesis_output: str, chart_paths: list[str] | None = None) -> str:
-    parts = [
-        "Stage 4 of 4: Final presentation.\n"
-        "Transform the analysis into a polished, insight-driven answer for the user.\n"
-        "Do NOT add new analysis - just present what was found in the best possible way.\n\n"
-        f"Original user question:\n{question}\n\n"
-        f"Collected data (raw query results):\n{_safe_truncate(collector_output)}\n\n"
-        f"Analyst findings:\n{analyst_output}\n\n"
-        f"Hypothesis and evidence:\n{hypothesis_output}"
-    ]
-    if chart_paths:
-        chart_list = "\n".join(f"  - {p}" for p in chart_paths)
-        parts.append(
-            f"\n\nCharts already generated by previous stages:\n{chart_list}\n"
-            "Do NOT recreate these. Only create NEW presentation-quality visualizations "
-            "that improve on these or add a different perspective. Aim for 2-3 charts total."
-        )
-    return "".join(parts)
-
 
 # ---------------------------------------------------------------------------
 # Pipeline runner with metrics
@@ -389,7 +222,7 @@ async def run_eval_pipeline(agents: dict, run_config: RunConfig, question: str) 
     # Stage 1: Data Collection
     print("    Stage 1/4: Data Collector...", end=" ", flush=True)
     collector_output, m1 = await asyncio.wait_for(
-        _run_stage(agents["collector"], _build_collector_input(question), run_config),
+        _run_stage(agents["collector"], build_collector_input(question), run_config),
         timeout=STAGE_TIMEOUT,
     )
     all_metrics.append(m1)
@@ -398,7 +231,7 @@ async def run_eval_pipeline(agents: dict, run_config: RunConfig, question: str) 
     # Stage 2: EDA Analysis
     print("    Stage 2/4: EDA Analyst...", end=" ", flush=True)
     analyst_output, m2 = await asyncio.wait_for(
-        _run_stage(agents["analyst"], _build_analyst_input(question, collector_output), run_config),
+        _run_stage(agents["analyst"], build_analyst_input(question, collector_output), run_config),
         timeout=STAGE_TIMEOUT,
     )
     all_metrics.append(m2)
@@ -407,7 +240,7 @@ async def run_eval_pipeline(agents: dict, run_config: RunConfig, question: str) 
     # Stage 3: Hypothesis Generation
     print("    Stage 3/4: Hypothesis Generator...", end=" ", flush=True)
     hypothesis_output, m3 = await asyncio.wait_for(
-        _run_stage(agents["hypothesizer"], _build_hypothesis_input(question, collector_output, analyst_output), run_config),
+        _run_stage(agents["hypothesizer"], build_hypothesis_input(question, collector_output, analyst_output), run_config),
         timeout=STAGE_TIMEOUT,
     )
     all_metrics.append(m3)
@@ -422,7 +255,7 @@ async def run_eval_pipeline(agents: dict, run_config: RunConfig, question: str) 
     final_output, m4 = await asyncio.wait_for(
         _run_stage(
             agents["presenter"],
-            _build_presenter_input(question, collector_output, analyst_output, hypothesis_output, chart_paths or None),
+            build_presenter_input(question, collector_output, analyst_output, hypothesis_output, chart_paths or None),
             run_config,
         ),
         timeout=STAGE_TIMEOUT,
@@ -608,7 +441,7 @@ async def main():
 
         # Create agents
         try:
-            agents = create_agents(spec.model_id)
+            agents = create_pipeline_agents(spec.model_id)
         except Exception as e:
             print(f"  SKIP: Failed to create agents: {e}")
             continue

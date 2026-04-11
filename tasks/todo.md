@@ -112,3 +112,25 @@
 - Import check confirming `len(EVAL_QUESTIONS) == 20`
 - `python evaluate.py --models openai/gpt-5.4-mini --questions 1 --output evaluation_openrouter_smoke_after_readme.json`
 - Smoke result: Q1 succeeded in 68.1s with 3 charts, 3465 answer chars, 6 tool calls, and quality score 84.
+
+## 2026-04-11 Pipeline/Config/Test Cleanup
+
+- [x] Extract shared agent-factory and pipeline helper code so production and evaluation stop drifting.
+- [x] Tighten runtime configuration handling for `.env`, CORS, and OpenRouter-only deployment settings.
+- [x] Remove the duplicate Python dependency manifest and keep one canonical backend package definition.
+- [x] Add a small automated backend test suite for non-LLM logic and wire it into verification.
+- [x] Run verification and document the outcome plus any residual risks.
+
+### Review
+
+- Added `backend/pipeline.py` as the shared source of truth for pipeline stage-input builders, answer-cleaning helpers, and model-specific agent construction. Production now uses the shared builder via `backend/agent_defs/registry.py`, and `backend/evaluate.py` uses the same helpers instead of carrying a second copy.
+- Added `backend/runtime_config.py` so `.env` loading is non-destructive (`override=False`) and backend CORS origins come from an explicit allowlist with safe localhost defaults.
+- Tightened deployment/local config: `docker-compose.yml` no longer carries `OPENAI_API_KEY`, frontend compose builds now bake `http://localhost:8000` correctly for browser access, `backend/.env.example` documents `CORS_ALLOW_ORIGINS`, and `cloudbuild.yaml` now updates the backend CORS allowlist with the deployed frontend URL after frontend rollout.
+- Removed `backend/requirements.txt` so `backend/pyproject.toml` and `backend/uv.lock` are the only backend dependency source of truth. `README.md` now points to `backend/pyproject.toml`.
+- Added a lightweight backend `unittest` suite covering pipeline helpers, runtime config parsing, SQL truncation metadata, SQL write blocking, disallowed imports, and artifact-producing code execution.
+- Verification completed:
+- `npm run lint`
+- `python -m py_compile main.py evaluate.py runtime_config.py pipeline.py agent_defs\__init__.py agent_defs\registry.py agent_defs\collector.py agent_defs\analyst.py agent_defs\hypothesizer.py agent_defs\presenter.py tools\sql_runner.py tools\code_executor.py tests\test_pipeline_helpers.py tests\test_runtime_config.py tests\test_tools.py`
+- `python -m unittest discover -s tests -p "test_*.py" -v`
+- Runtime import smoke: `main` and `evaluate` both import successfully with a dummy `OPENROUTER_API_KEY`
+- Residual risk: I did not implement the SQL count/concurrency change. That remains a separate tradeoff decision because replacing exact row counts with a cheaper `has_more`-style signal would improve performance but may slightly reduce metadata fidelity in the trace UI and tool outputs.

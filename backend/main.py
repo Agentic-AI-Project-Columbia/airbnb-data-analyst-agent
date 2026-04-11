@@ -6,10 +6,6 @@ import asyncio
 import re
 import uuid
 
-from dotenv import load_dotenv
-
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
-
 sys.path.insert(0, os.path.dirname(__file__))
 
 from openai import AsyncOpenAI
@@ -20,6 +16,19 @@ from agents import (
     RunConfig,
     set_default_openai_client,
     set_tracing_disabled,
+)
+from runtime_config import get_cors_origins, load_project_dotenv
+
+load_project_dotenv()
+
+from agent_defs import analyst_agent, collector_agent, hypothesizer_agent, presenter_agent
+from pipeline import (
+    build_analyst_input as _build_analyst_input,
+    build_collector_input as _build_collector_input,
+    build_hypothesis_input as _shared_build_hypothesis_input,
+    build_presenter_input as _shared_build_presenter_input,
+    clean_final_answer as _clean_final_answer,
+    safe_truncate as _safe_truncate,
 )
 
 # ---------------------------------------------------------------------------
@@ -58,15 +67,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from agents import Runner
-from agent_defs.collector import collector_agent
-from agent_defs.analyst import analyst_agent
-from agent_defs.hypothesizer import hypothesizer_agent
-from agent_defs.presenter import presenter_agent
 
-ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "artifacts")
+ARTIFACTS_DIR = os.environ.get(
+    "ARTIFACTS_DIR",
+    os.path.join(os.path.dirname(__file__), "artifacts"),
+)
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
-SHARES_DIR = os.path.join(os.path.dirname(__file__), "shares")
+SHARES_DIR = os.environ.get(
+    "SHARES_DIR",
+    os.path.join(os.path.dirname(__file__), "shares"),
+)
 os.makedirs(SHARES_DIR, exist_ok=True)
 
 STAGE_TIMEOUT_SECONDS = 180    # 3 minutes per agent stage
@@ -87,8 +98,8 @@ app = FastAPI(title="Airbnb Multi-Agent Analyst")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=get_cors_origins(),
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -142,22 +153,6 @@ async def get_share(share_id: str):
 
     with open(share_path, "r") as f:
         return json.load(f)
-
-
-def _collect_artifacts() -> list[str]:
-    artifacts = []
-    if os.path.exists(ARTIFACTS_DIR):
-        for run_dir in os.listdir(ARTIFACTS_DIR):
-            run_path = os.path.join(ARTIFACTS_DIR, run_dir)
-            if os.path.isdir(run_path):
-                for f in os.listdir(run_path):
-                    artifacts.append(f"/artifacts/{run_dir}/{f}")
-    return artifacts
-
-
-def _collect_new_artifacts(existing_artifacts: set[str]) -> list[str]:
-    current_artifacts = set(_collect_artifacts())
-    return sorted(current_artifacts - existing_artifacts)
 
 
 def _extract_artifacts_from_trace(trace: list[dict], start_index: int = 0) -> list[str]:
@@ -215,42 +210,6 @@ def _build_runner_input(question: str, history: list[dict] | None):
         f"Conversation so far:\n{transcript}\n\n"
         f"Latest user request:\n{question}"
     )
-
-
-def _safe_truncate(text: str, limit: int = 2000) -> str:
-    if len(text) <= limit:
-        return text
-    return text[:limit] + f"\n... ({len(text) - limit} chars truncated)"
-
-
-def _clean_final_answer(text: str) -> str:
-    cleaned = text
-    # Safety net: strip any remaining fenced Python code blocks
-    cleaned = re.sub(
-        r"```(?:python|py)[\s\S]*?```",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    # Remove "see filename:" type references
-    cleaned = re.sub(
-        r"\s*\(?(?:see (?:filename|file):?|see below for visualization\.?)\s*`?[^`\n)]*`?\)?",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    # Remove standalone bare filenames (but preserve markdown image syntax ![...](path))
-    cleaned = re.sub(
-        r"(?<!\()`?[\w.-]+\.(?:png|jpg|jpeg|gif|webp|svg)`?(?!\))",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    # Collapse 3+ consecutive newlines to exactly 2
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    # Remove lines that contain only whitespace
-    cleaned = re.sub(r"\n[ \t]+\n", "\n\n", cleaned)
-    return cleaned.strip()
 
 
 MAX_CHARTS = 4  # Hard cap on total charts in final output
@@ -488,30 +447,16 @@ async def _run_agent_stage(
     return current_agent, final_text
 
 
-def _build_collector_input(resolved_request: str) -> str:
-    return (
-        "Stage 1 of 4: Data Collection.\n"
-        "Collect only the data needed to answer the request.\n"
-        "Do not provide the final answer.\n\n"
-        f"Resolved user request:\n{resolved_request}"
-    )
-
-
-def _build_analyst_input(resolved_request: str, collector_output: str) -> str:
-    return (
-        "Stage 2 of 4: Exploratory Data Analysis.\n"
-        "Use the collected data below to compute findings, patterns, and caveats.\n"
-        "Do not provide the final polished user answer yet.\n\n"
-        f"Resolved user request:\n{resolved_request}\n\n"
-        f"Collected data:\n{collector_output}"
-    )
-
-
 def _build_hypothesis_input(
     resolved_request: str,
     collector_output: str,
     analyst_output: str,
 ) -> str:
+    return _shared_build_hypothesis_input(
+        resolved_request,
+        collector_output,
+        analyst_output,
+    )
     return (
         "Stage 3 of 4: Hypothesis and visualization.\n"
         "Use the collected data and analyst findings to form a hypothesis with evidence.\n"
@@ -530,6 +475,13 @@ def _build_presenter_input(
     hypothesis_output: str,
     existing_chart_paths: list[str] | None = None,
 ) -> str:
+    return _shared_build_presenter_input(
+        resolved_request,
+        collector_output,
+        analyst_output,
+        hypothesis_output,
+        existing_chart_paths=existing_chart_paths,
+    )
     parts = [
         "Stage 4 of 4: Final presentation.\n"
         "Transform the analysis into a polished, insight-driven answer for the user.\n"

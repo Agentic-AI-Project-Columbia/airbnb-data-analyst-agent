@@ -284,7 +284,7 @@ An eight-step Cloud Build pipeline (`cloudbuild.yaml`) automates the entire depl
 
 ## 10. Requirements
 
-### Backend (`backend/requirements.txt`)
+### Backend (`backend/pyproject.toml`)
 
 ```
 openai-agents>=0.7.0        # Agent framework: Agent, function_tool, Runner, handoffs
