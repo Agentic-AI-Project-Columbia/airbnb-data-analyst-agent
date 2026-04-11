@@ -492,6 +492,10 @@ async def _run_agent_stage(
                     if isinstance(parsed_output, dict):
                         if "row_count" in parsed_output:
                             step["row_count"] = parsed_output["row_count"]
+                        if "returned_row_count" in parsed_output:
+                            step["returned_row_count"] = parsed_output["returned_row_count"]
+                        if "truncated" in parsed_output:
+                            step["truncated"] = parsed_output["truncated"]
                         if "columns" in parsed_output and isinstance(parsed_output["columns"], list):
                             step["columns"] = parsed_output["columns"]
                         if "data" in parsed_output and isinstance(parsed_output["data"], list):

@@ -3,12 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Header from "@/components/Header";
 import ChatInput from "@/components/ChatInput";
+import DataOverview from "@/components/DataOverview";
 import MessageBubble, {
   type Message,
   type TraceStep,
 } from "@/components/MessageBubble";
 import WaitingGame from "@/components/WaitingGame";
 import PipelineFlowchart from "@/components/PipelineFlowchart";
+import SchemaExplorer from "@/components/SchemaExplorer";
 import { getStageForAgent } from "@/lib/pipeline-stages";
 import type { TableSchema } from "@/components/SqlQueryBlock";
 
@@ -77,6 +79,20 @@ const ALL_QUESTIONS = [
   "Which hosts have the most listings across NYC?",
   "How does review activity look month by month over time?",
 ];
+
+function buildConversationHistory(messages: Message[]) {
+  return messages
+    .filter(
+      (message): message is Message =>
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.content === "string" &&
+        message.content.trim().length > 0
+    )
+    .map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
+}
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -154,6 +170,7 @@ export default function Home() {
   const handleSend = useCallback(
     async (question: string) => {
       const startedAt = Date.now() / 1000;
+      const history = buildConversationHistory(messages);
 
       const userMsg: Message = {
         id: Date.now().toString(),
@@ -182,7 +199,7 @@ export default function Home() {
         socketRef.current = socket;
 
         socket.onopen = () => {
-          socket.send(JSON.stringify({ question, history: [] }));
+          socket.send(JSON.stringify({ question, history }));
         };
 
         socket.onmessage = (event) => {
@@ -256,6 +273,7 @@ export default function Home() {
               content: payload.content,
               artifacts: payload.artifacts,
               trace,
+              question,
             });
             setLoading(false);
             setAnswered(true);
@@ -301,10 +319,8 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [addMessage, buildFallbackTrace]
+    [addMessage, buildFallbackTrace, messages]
   );
-
-  const userQuestion = messages.find((m) => m.role === "user")?.content;
 
   return (
     <div className="flex flex-col h-screen">
@@ -314,30 +330,12 @@ export default function Home() {
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center px-6">
             <div className="w-full max-w-4xl landing-content">
-              <div className="text-center mb-5">
-                <div className="flex items-center justify-center gap-3 mb-2">
-                  <div className="w-10 h-10 gradient-coral rounded-xl flex items-center justify-center shadow-md">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 3v18h18" />
-                      <path d="M7 16l4-8 4 4 4-10" />
-                    </svg>
-                  </div>
-                  <h2 className="text-2xl font-bold text-[var(--color-navy)] tracking-tight">
-                    NYC Airbnb Data Analyst
-                  </h2>
-                </div>
-                <p className="text-sm text-[var(--color-gray-warm)]">
-                  Explore{" "}
-                  <span className="font-semibold text-[var(--color-navy)]">37K+</span> listings,{" "}
-                  <span className="font-semibold text-[var(--color-navy)]">985K+</span> reviews, and{" "}
-                  <span className="font-semibold text-[var(--color-navy)]">230</span> neighbourhoods across NYC
-                </p>
-              </div>
+              <DataOverview schema={schema} />
 
               <p className="text-xs font-semibold text-[var(--color-gray-warm)] uppercase tracking-wider text-center mb-3">
                 Try asking
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {ALL_QUESTIONS.map((q, i) => (
                   <button
                     key={i}
@@ -349,6 +347,10 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+
+              <div className="mt-6 max-w-2xl mx-auto">
+                <SchemaExplorer schema={schema} />
+              </div>
             </div>
           </div>
         ) : (
@@ -359,7 +361,6 @@ export default function Home() {
                   key={msg.id}
                   message={msg}
                   schema={schema}
-                  userQuestion={userQuestion}
                 />
               ))}
             </div>
@@ -376,13 +377,11 @@ export default function Home() {
         />
       )}
 
-      {!answered && (
-        <footer className="border-t border-[var(--color-border)] bg-white/80 backdrop-blur-md">
-          <div className="max-w-4xl mx-auto px-6 py-4">
-            <ChatInput onSend={handleSend} disabled={loading} />
-          </div>
-        </footer>
-      )}
+      <footer className="border-t border-[var(--color-border)] bg-white/80 backdrop-blur-md">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <ChatInput onSend={handleSend} disabled={loading} />
+        </div>
+      </footer>
     </div>
   );
 }

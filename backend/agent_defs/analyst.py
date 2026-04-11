@@ -14,7 +14,8 @@ ANALYST_INSTRUCTIONS = load_prompt("analyst").replace(
 def run_analysis_code(code: str) -> str:
     """Execute Python code for exploratory data analysis.
     The code has access to pandas, numpy, scipy, duckdb, and other data libraries.
-    DATA_DIR points to the CSV data files. ARTIFACTS_DIR is available for saving outputs.
+    DATA_DIR points to the CSV data files. DATA_DIR and ARTIFACTS_DIR are available
+    as both Python variables and os.environ values.
     Returns stdout, stderr, exit_code, and any saved artifact paths.
     """
     return _execute_python(code)

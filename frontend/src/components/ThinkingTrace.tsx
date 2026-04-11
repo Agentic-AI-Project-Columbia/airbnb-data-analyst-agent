@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, memo, useMemo } from "react";
 import type { TraceStep } from "./MessageBubble";
 import type { TableSchema } from "./SqlQueryBlock";
@@ -317,6 +318,11 @@ function StageCard({
             const matchingOutput = toolOutputs[i];
             const raw = matchingOutput as Record<string, unknown> | undefined;
             const rowCount = typeof raw?.row_count === "number" ? raw.row_count : undefined;
+            const returnedRowCount =
+              typeof raw?.returned_row_count === "number"
+                ? raw.returned_row_count
+                : undefined;
+            const truncated = raw?.truncated === true;
             const columns = Array.isArray(raw?.columns) ? (raw.columns as string[]) : undefined;
             const preview = Array.isArray(raw?.preview) ? (raw.preview as Record<string, unknown>[]) : undefined;
             const tables = Array.isArray((tc as Record<string, unknown>).tables) ? ((tc as Record<string, unknown>).tables as string[]) : undefined;
@@ -333,6 +339,8 @@ function StageCard({
                   <>
                     <QueryResultSummary
                       rowCount={rowCount}
+                      returnedRowCount={returnedRowCount}
+                      truncated={truncated}
                       columns={columns}
                       preview={preview}
                     />
@@ -363,11 +371,13 @@ function StageCard({
                       rel="noreferrer"
                       className="block w-32 h-24 rounded-lg overflow-hidden border border-[var(--color-border)] hover:border-[var(--color-coral)] transition-colors"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={name}
+                        width={128}
+                        height={96}
+                        unoptimized
                         className="w-full h-full object-cover"
-                        loading="lazy"
                       />
                     </a>
                   );
@@ -392,14 +402,13 @@ function ThinkingTraceInner({
   schema: Record<string, TableSchema> | null;
 }) {
   const [open, setOpen] = useState(true);
-
-  if (steps.length === 0) return null;
-
   const groups = useMemo(() => groupStepsByStage(steps), [steps]);
   const totalDuration = useMemo(
     () => (steps.length >= 2 ? steps[steps.length - 1].ts - steps[0].ts : 0),
     [steps]
   );
+
+  if (steps.length === 0) return null;
 
   return (
     <div className="mt-5 border-t border-[var(--color-border)] pt-4">

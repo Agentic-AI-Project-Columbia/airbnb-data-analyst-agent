@@ -1,0 +1,249 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T18:33:30.739065+00:00",
+    "total_duration_s": 219.0,
+    "num_models": 1,
+    "num_questions": 3,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 3,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      },
+      {
+        "id": 4,
+        "category": "Availability",
+        "question": "Which neighbourhoods have the highest and lowest availability throughout the year?"
+      },
+      {
+        "id": 5,
+        "category": "Reviews",
+        "question": "What are the most common complaints in guest reviews?"
+      },
+      {
+        "id": 6,
+        "category": "Geographic",
+        "question": "How does the density of listings compare across boroughs and what types dominate each area?"
+      },
+      {
+        "id": 7,
+        "category": "Amenities",
+        "question": "Do listings with more amenities charge higher prices and get better reviews?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "google/gemini-2.5-flash",
+      "display_name": "Gemini 2.5 Flash",
+      "provider": "vertex",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 148.6,
+          "answer_len": 321,
+          "answer_preview": "Airbnb pricing in NYC exhibits significant variation by both room type and borough, with 'Entire home/apt' listings consistently being the most expensive and Manhattan commanding the highest prices across the board. This differentiation offers a wide range of options for travelers with varying budge",
+          "num_charts": 2,
+          "num_tool_calls": 8,
+          "num_agent_steps": 14,
+          "input_tokens": 52670,
+          "output_tokens": 9477,
+          "estimated_cost_usd": 0.013587,
+          "quality_score": 61,
+          "artifacts": [
+            "/artifacts/d3171167/avg_price_by_room_type_borough.png",
+            "/artifacts/d3171167/box_plot_entire_home_prices.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 7.043288230895996,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 4917,
+              "output_tokens": 452,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 9.286830425262451,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1711,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 119.5866322517395,
+              "tool_calls": 6,
+              "agent_steps": 8,
+              "input_tokens": 42766,
+              "output_tokens": 8971,
+              "artifacts": [
+                "/artifacts/d3171167/avg_price_by_room_type_borough.png",
+                "/artifacts/d3171167/box_plot_entire_home_prices.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 12.644110202789307,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 3276,
+              "output_tokens": 54,
+              "artifacts": [],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 2,
+          "category": "Host Quality",
+          "question": "Do superhosts get better review scores than regular hosts?",
+          "status": "success",
+          "total_time_s": 32.5,
+          "answer_len": 0,
+          "answer_preview": "",
+          "num_charts": 0,
+          "num_tool_calls": 1,
+          "num_agent_steps": 8,
+          "input_tokens": 8606,
+          "output_tokens": 359,
+          "estimated_cost_usd": 0.001506,
+          "quality_score": 44,
+          "artifacts": [],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 4.49552845954895,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3165,
+              "output_tokens": 359,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 7.371209383010864,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1630,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 13.90580439567566,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1669,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 6.750438928604126,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 2142,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 3,
+          "category": "Temporal",
+          "question": "How has host sign-up activity changed over the years?",
+          "status": "success",
+          "total_time_s": 28.8,
+          "answer_len": 212,
+          "answer_preview": "Host sign-up activity in NYC Airbnb has seen a significant journey, characterized by rapid growth in its early years, peaking in **2015**, followed by a consistent decline with a notable sharp drop in **2020**.\n\n",
+          "num_charts": 0,
+          "num_tool_calls": 1,
+          "num_agent_steps": 8,
+          "input_tokens": 9055,
+          "output_tokens": 689,
+          "estimated_cost_usd": 0.001772,
+          "quality_score": 50,
+          "artifacts": [],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 3.4775805473327637,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3173,
+              "output_tokens": 337,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 5.804590702056885,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1676,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 10.4386146068573,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1715,
+              "output_tokens": 303,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 9.059728622436523,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 2491,
+              "output_tokens": 49,
+              "artifacts": [],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 70.0,
+        "avg_score": 51.7,
+        "avg_charts": 0.7,
+        "total_cost_usd": 0.016865,
+        "total_input_tokens": 70331,
+        "total_output_tokens": 10525
+      }
+    }
+  ]
+}

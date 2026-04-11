@@ -5,17 +5,21 @@ from tools.code_executor import execute_python as _execute_python
 from tools.sql_runner import run_sql, get_schema_description
 from prompts import load_prompt
 
-PRESENTER_INSTRUCTIONS = load_prompt("presenter")
+PRESENTER_INSTRUCTIONS = load_prompt("presenter").replace(
+    "{SCHEMA_INFO}", get_schema_description()
+)
 
 
 @function_tool
 def create_visualization(code: str) -> str:
     """Execute Python code to generate presentation-quality data visualizations.
-    Use matplotlib/seaborn to create polished charts. Save figures to ARTIFACTS_DIR as PNG.
-    DATA_DIR points to the CSV data files for direct access if needed.
+    Use matplotlib/seaborn to create polished charts. Save figures to the local
+    filesystem directory stored in ARTIFACTS_DIR as PNG; do not save directly to
+    /artifacts/... URLs. DATA_DIR and ARTIFACTS_DIR are available as both Python
+    variables and os.environ values.
     Returns stdout, stderr, exit_code, and artifact paths for generated charts.
     """
-    return _execute_python(code)
+    return _execute_python(code, require_artifacts=True)
 
 
 @function_tool
@@ -27,8 +31,9 @@ def query_database(sql: str) -> str:
 
 @function_tool
 def run_analysis_code(code: str) -> str:
-    """Execute Python code for data analysis. DATA_DIR and ARTIFACTS_DIR are pre-set.
-    Returns stdout, stderr, exit_code, and any artifacts."""
+    """Execute Python code for data analysis. DATA_DIR and ARTIFACTS_DIR are available
+    as both Python variables and os.environ values. Returns stdout, stderr,
+    exit_code, and any artifacts."""
     return _execute_python(code)
 
 
@@ -49,7 +54,8 @@ _presenter_analyst = Agent(
     instructions=(
         "You are assisting the Presenter agent. Run the requested Python analysis, "
         "return the results, then hand off back to the Presenter.\n"
-        "DATA_DIR and ARTIFACTS_DIR are pre-set variables available in your code."
+        "DATA_DIR and ARTIFACTS_DIR are available as both Python variables and "
+        "environment variables in your code."
     ),
     tools=[run_analysis_code],
     model=DEFAULT_MODEL,

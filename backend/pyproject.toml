@@ -5,6 +5,7 @@ description = "Backend API for the Airbnb data analyst agent"
 requires-python = ">=3.11"
 dependencies = [
   "openai-agents>=0.7.0",
+  "openai>=1.0.0",
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.34.0",
   "duckdb>=1.2.0",

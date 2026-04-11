@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, use } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -24,11 +26,13 @@ function ImageArtifact({ url, name }: { url: string; name: string }) {
   return (
     <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
       {!failed ? (
-        <img
+        <Image
           src={url}
           alt={name}
+          width={1200}
+          height={800}
+          unoptimized
           className="w-full"
-          loading="lazy"
           onError={() => setFailed(true)}
         />
       ) : (
@@ -94,12 +98,12 @@ export default function SharePage({
             <p className="text-sm text-[var(--color-gray-warm)]">
               This link may have expired or been removed.
             </p>
-            <a
+            <Link
               href="/"
               className="inline-block mt-4 text-sm font-medium gradient-coral text-white px-4 py-2 rounded-full hover:opacity-90 transition-all"
             >
               Go to Airbnb Data Analyst
-            </a>
+            </Link>
           </div>
         </main>
       </div>
@@ -144,7 +148,7 @@ export default function SharePage({
     <div className="flex flex-col h-screen">
       <header className="border-b border-[var(--color-border)] bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">
-          <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="w-9 h-9 gradient-coral rounded-lg flex items-center justify-center shadow-sm">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 3v18h18" />
@@ -159,14 +163,14 @@ export default function SharePage({
                 Shared analysis
               </p>
             </div>
-          </a>
+          </Link>
           <div className="ml-auto">
-            <a
+            <Link
               href="/"
               className="text-xs font-medium gradient-coral text-white px-3 py-1.5 rounded-full hover:opacity-90 active:scale-95 transition-all duration-150"
             >
               Try it yourself
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -184,7 +188,27 @@ export default function SharePage({
           <div className="flex justify-start animate-fade-in-up">
             <div className="max-w-[85%] rounded-2xl px-5 py-3.5 bg-white border border-[var(--color-border)] rounded-bl-md shadow-sm">
               <div className="prose-chat text-[0.95rem]">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    img: ({ src, alt }) => {
+                      const srcStr = typeof src === "string" ? src : "";
+                      const resolvedSrc = srcStr.startsWith("/artifacts/")
+                        ? `${BACKEND_URL}${srcStr}`
+                        : srcStr;
+                      return (
+                        <Image
+                          src={resolvedSrc}
+                          alt={alt || ""}
+                          width={1200}
+                          height={800}
+                          unoptimized
+                          className="inline-chart"
+                        />
+                      );
+                    },
+                  }}
+                >
                   {data.answer}
                 </ReactMarkdown>
               </div>

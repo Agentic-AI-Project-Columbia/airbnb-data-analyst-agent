@@ -1,0 +1,138 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T06:21:16.450454+00:00",
+    "total_duration_s": 67.8,
+    "num_models": 1,
+    "num_questions": 1,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 3,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      },
+      {
+        "id": 4,
+        "category": "Availability",
+        "question": "Which neighbourhoods have the highest and lowest availability throughout the year?"
+      },
+      {
+        "id": 5,
+        "category": "Reviews",
+        "question": "What are the most common complaints in guest reviews?"
+      },
+      {
+        "id": 6,
+        "category": "Geographic",
+        "question": "How does the density of listings compare across boroughs and what types dominate each area?"
+      },
+      {
+        "id": 7,
+        "category": "Amenities",
+        "question": "Do listings with more amenities charge higher prices and get better reviews?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "openai/gpt-5.4-mini",
+      "display_name": "GPT-5.4 Mini",
+      "provider": "openrouter",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 66.7,
+          "answer_len": 2584,
+          "answer_preview": "Manhattan is the most expensive borough for every room type, and the gap is especially large for private and shared rooms. Room type still matters, but borough location is the stronger price signal overall.\n\n## Manhattan sets the price ceiling across the market\nManhattan leads every comparable categ",
+          "num_charts": 6,
+          "num_tool_calls": 7,
+          "num_agent_steps": 8,
+          "input_tokens": 32245,
+          "output_tokens": 7086,
+          "estimated_cost_usd": 0.030294,
+          "quality_score": 85,
+          "artifacts": [
+            "/artifacts/45d45b9b/borough_roomtype_price_heatmap.png",
+            "/artifacts/45d45b9b/chart_2.png",
+            "/artifacts/72e4157f/borough_roomtype_median_prices.png",
+            "/artifacts/72e4157f/chart_2.png",
+            "/artifacts/da272cef/borough_roomtype_grouped_avg_prices.png",
+            "/artifacts/da272cef/borough_roomtype_spread.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 8.118374347686768,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 5692,
+              "output_tokens": 745,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 17.989542722702026,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 5052,
+              "output_tokens": 2035,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 25.908089637756348,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 11007,
+              "output_tokens": 2478,
+              "artifacts": [
+                "/artifacts/45d45b9b/borough_roomtype_price_heatmap.png",
+                "/artifacts/45d45b9b/chart_2.png",
+                "/artifacts/72e4157f/borough_roomtype_median_prices.png",
+                "/artifacts/72e4157f/chart_2.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 14.68205714225769,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 10494,
+              "output_tokens": 1828,
+              "artifacts": [
+                "/artifacts/da272cef/borough_roomtype_grouped_avg_prices.png",
+                "/artifacts/da272cef/borough_roomtype_spread.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 66.7,
+        "avg_score": 85.0,
+        "avg_charts": 6.0,
+        "total_cost_usd": 0.030294,
+        "total_input_tokens": 32245,
+        "total_output_tokens": 7086
+      }
+    }
+  ]
+}

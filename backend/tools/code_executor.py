@@ -1,41 +1,58 @@
+import ast
 import os
 import sys
-import json
 import uuid
-import io
-import threading
-import traceback
-import contextlib
+import subprocess
 
-ARTIFACTS_DIR = os.environ.get(
-    "ARTIFACTS_DIR",
-    os.path.join(os.path.dirname(__file__), "..", "artifacts"),
-)
+from models.schemas import ArtifactRef, CodeExecutionResult
 
 ALLOWED_IMPORTS = {
     "pandas", "numpy", "scipy", "matplotlib", "seaborn",
     "json", "csv", "math", "statistics", "collections",
     "datetime", "re", "os", "io", "textwrap",
     "duckdb",
+    "itertools", "pathlib", "typing",
+    "time", "warnings",
 }
 
 TIMEOUT_SECONDS = 120
 
+ARTIFACTS_DIR = os.environ.get(
+    "ARTIFACTS_DIR",
+    os.path.join(os.path.dirname(__file__), "..", "artifacts"),
+)
 
-def _reset_matplotlib() -> None:
-    """Reset matplotlib state to avoid leaks between exec calls."""
+
+def _validate_imports(code: str) -> str | None:
     try:
-        import matplotlib
-        import matplotlib.pyplot as plt
-        plt.close("all")
-        matplotlib.rcParams.update(matplotlib.rcParamsDefault)
-        matplotlib.use("Agg")
-    except Exception:
-        pass
+        tree = ast.parse(code)
+    except SyntaxError as exc:
+        return f"Syntax error before execution: {exc}"
+
+    disallowed: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                module = alias.name.split(".")[0]
+                if module not in ALLOWED_IMPORTS:
+                    disallowed.add(module)
+        elif isinstance(node, ast.ImportFrom):
+            if node.module is None:
+                continue
+            module = node.module.split(".")[0]
+            if module not in ALLOWED_IMPORTS:
+                disallowed.add(module)
+
+    if disallowed:
+        blocked = ", ".join(sorted(disallowed))
+        allowed = ", ".join(sorted(ALLOWED_IMPORTS))
+        return f"Disallowed imports: {blocked}. Allowed imports: {allowed}."
+
+    return None
 
 
-def execute_python(code: str) -> str:
-    """Run Python code via exec() in an isolated namespace and return stdout + artifacts."""
+def execute_python(code: str, require_artifacts: bool = False) -> str:
+    """Run Python code in a subprocess and return stdout, stderr, and artifacts."""
     os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 
     run_id = uuid.uuid4().hex[:8]
@@ -47,13 +64,25 @@ def execute_python(code: str) -> str:
         os.path.join(os.path.dirname(__file__), "..", "..", "Sample Data"),
     ).replace("\\", "/")
 
+    import_error = _validate_imports(code)
+    if import_error is not None:
+        return CodeExecutionResult(
+            stdout="",
+            stderr=import_error,
+            exit_code=1,
+            artifacts=[],
+        ).model_dump_json()
+
     preamble = (
+        "# -*- coding: utf-8 -*-\n"
+        "import os\n"
         "import matplotlib\n"
         "matplotlib.use('Agg')\n"
         "import matplotlib.pyplot as plt\n"
-        "plt.rcParams['figure.constrained_layout.use'] = True\n"
         f"ARTIFACTS_DIR = r'{run_artifacts_dir}'\n"
         f"DATA_DIR = r'{data_dir}'\n"
+        "os.environ['ARTIFACTS_DIR'] = ARTIFACTS_DIR\n"
+        "os.environ['DATA_DIR'] = DATA_DIR\n"
     )
     postamble = (
         "\n\n"
@@ -75,51 +104,58 @@ def execute_python(code: str) -> str:
     )
     full_code = preamble + code + postamble
 
-    stdout_capture = io.StringIO()
-    stderr_capture = io.StringIO()
-    exec_globals = {"__builtins__": __builtins__}
-    result = {"completed": False, "error": None}
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["MPLBACKEND"] = "Agg"
+    env["DATA_DIR"] = data_dir
+    env["ARTIFACTS_DIR"] = run_artifacts_dir
 
-    def _run():
-        try:
-            with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(stderr_capture):
-                exec(compile(full_code, f"<agent_code_{run_id}>", "exec"), exec_globals)
-            result["completed"] = True
-        except SystemExit as e:
-            result["completed"] = (e.code is None or e.code == 0)
-            if not result["completed"]:
-                stderr_capture.write(f"Script exited with code {e.code}\n")
-        except Exception:
-            stderr_capture.write(traceback.format_exc())
-            result["error"] = traceback.format_exc()
+    try:
+        result = subprocess.run(
+            [sys.executable, "-"],
+            input=full_code,
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            timeout=TIMEOUT_SECONDS,
+            cwd=os.path.dirname(__file__),
+            env=env,
+            check=False,
+        )
+        stdout = result.stdout
+        stderr = result.stderr
+        exit_code = result.returncode
+    except subprocess.TimeoutExpired:
+        return CodeExecutionResult(
+            stdout="",
+            stderr=f"Code execution timed out after {TIMEOUT_SECONDS}s",
+            exit_code=1,
+            artifacts=[],
+        ).model_dump_json()
 
-    thread = threading.Thread(target=_run, daemon=True)
-    thread.start()
-    thread.join(timeout=TIMEOUT_SECONDS)
-
-    if thread.is_alive():
-        _reset_matplotlib()
-        return json.dumps({"error": f"Code execution timed out after {TIMEOUT_SECONDS}s"})
-
-    _reset_matplotlib()
-
-    stdout = stdout_capture.getvalue()
-    stderr = stderr_capture.getvalue()
     stdout = stdout[-8000:] if len(stdout) > 8000 else stdout
     stderr = stderr[-4000:] if len(stderr) > 4000 else stderr
 
-    exit_code = 0 if result["completed"] and not result["error"] else 1
-
-    artifacts = []
+    artifacts: list[ArtifactRef] = []
     if os.path.isdir(run_artifacts_dir):
         for f in os.listdir(run_artifacts_dir):
             artifacts.append(
-                {"filename": f, "path": f"/artifacts/{run_id}/{f}"}
+                ArtifactRef(filename=f, path=f"/artifacts/{run_id}/{f}")
             )
 
-    return json.dumps({
-        "stdout": stdout,
-        "stderr": stderr,
-        "exit_code": exit_code,
-        "artifacts": artifacts,
-    })
+    if require_artifacts and exit_code == 0 and not artifacts:
+        artifact_hint = (
+            "No artifacts were created. Save generated files to the local filesystem "
+            "directory stored in ARTIFACTS_DIR. Do not save directly to /artifacts/..."
+            " paths; those are public URLs returned after a file is written successfully."
+        )
+        stderr = f"{stderr}\n{artifact_hint}".strip() if stderr else artifact_hint
+        exit_code = 1
+
+    return CodeExecutionResult(
+        stdout=stdout,
+        stderr=stderr,
+        exit_code=exit_code,
+        artifacts=artifacts,
+    ).model_dump_json()

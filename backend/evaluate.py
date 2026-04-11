@@ -153,8 +153,8 @@ def create_agents(model_id: str) -> dict:
 
     collector_instructions = load_prompt("collector").format(SCHEMA_INFO=schema_desc)
     analyst_instructions = load_prompt("analyst").replace("{SCHEMA_INFO}", schema_desc)
-    hypothesizer_instructions = load_prompt("hypothesizer")
-    presenter_instructions = load_prompt("presenter")
+    hypothesizer_instructions = load_prompt("hypothesizer").replace("{SCHEMA_INFO}", schema_desc)
+    presenter_instructions = load_prompt("presenter").replace("{SCHEMA_INFO}", schema_desc)
 
     # ---- Tools (need unique names per agent set to avoid collisions) ----
     @function_tool
@@ -175,12 +175,12 @@ def create_agents(model_id: str) -> dict:
     @function_tool
     def hyp_create_viz(code: str) -> str:
         """Execute Python code to generate data visualizations."""
-        return execute_python(code)
+        return execute_python(code, require_artifacts=True)
 
     @function_tool
     def pres_create_viz(code: str) -> str:
         """Execute Python code to generate presentation-quality visualizations."""
-        return execute_python(code)
+        return execute_python(code, require_artifacts=True)
 
     @function_tool
     def pres_query_db(sql: str) -> str:

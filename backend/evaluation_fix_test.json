@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T06:53:24.219413+00:00",
+    "total_duration_s": 62.7,
+    "num_models": 1,
+    "num_questions": 1,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 3,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      },
+      {
+        "id": 4,
+        "category": "Availability",
+        "question": "Which neighbourhoods have the highest and lowest availability throughout the year?"
+      },
+      {
+        "id": 5,
+        "category": "Reviews",
+        "question": "What are the most common complaints in guest reviews?"
+      },
+      {
+        "id": 6,
+        "category": "Geographic",
+        "question": "How does the density of listings compare across boroughs and what types dominate each area?"
+      },
+      {
+        "id": 7,
+        "category": "Amenities",
+        "question": "Do listings with more amenities charge higher prices and get better reviews?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "openai/gpt-5.4-mini",
+      "display_name": "GPT-5.4 Mini",
+      "provider": "openrouter",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 61.8,
+          "answer_len": 2620,
+          "answer_preview": "Pricing is driven first by room type, but the size of that premium depends on borough. Manhattan is the priciest market across the board, while Brooklyn and Queens show the clearest jump between entire homes and private rooms.\n\n## Entire homes command a clear premium in every borough\nAcross the five",
+          "num_charts": 3,
+          "num_tool_calls": 7,
+          "num_agent_steps": 8,
+          "input_tokens": 35398,
+          "output_tokens": 7764,
+          "estimated_cost_usd": 0.033227,
+          "quality_score": 84,
+          "artifacts": [
+            "/artifacts/3c72187f/borough_roomtype_price_distribution_trimmed.png",
+            "/artifacts/b1dfe244/borough_roomtype_median_prices.png",
+            "/artifacts/db3799df/entire_home_vs_private_room_ratio_by_borough.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 8.724828481674194,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 5712,
+              "output_tokens": 1043,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 21.90987801551819,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 6170,
+              "output_tokens": 2414,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 19.48179030418396,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 12842,
+              "output_tokens": 2547,
+              "artifacts": [
+                "/artifacts/3c72187f/borough_roomtype_price_distribution_trimmed.png",
+                "/artifacts/b1dfe244/borough_roomtype_median_prices.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 11.698741674423218,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 10674,
+              "output_tokens": 1760,
+              "artifacts": [
+                "/artifacts/db3799df/entire_home_vs_private_room_ratio_by_borough.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 61.8,
+        "avg_score": 84.0,
+        "avg_charts": 3.0,
+        "total_cost_usd": 0.033227,
+        "total_input_tokens": 35398,
+        "total_output_tokens": 7764
+      }
+    }
+  ]
+}

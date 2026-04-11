@@ -1,7 +1,8 @@
 import os
-import json
 import threading
 import duckdb
+
+from models.schemas import ErrorResult, QueryResult
 
 DATA_DIR = os.environ.get(
     "DATA_DIR",
@@ -116,20 +117,29 @@ def get_schema_description() -> str:
 def run_sql(query: str, max_rows: int = 500) -> str:
     """Execute a read-only SQL query and return results as JSON."""
     con = _get_connection()
-    upper = query.strip().upper()
+    normalized_query = query.strip().rstrip(";")
+    upper = normalized_query.upper()
     if any(upper.startswith(kw) for kw in ("INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE")):
-        return json.dumps({"error": "Only SELECT queries are allowed."})
+        return ErrorResult(error="Only SELECT queries are allowed.").model_dump_json()
 
     try:
         with _db_lock:
-            result = con.execute(query)
+            result = con.execute(normalized_query)
             columns = [desc[0] for desc in result.description]
             rows = result.fetchmany(max_rows)
+            total_rows = len(rows)
+            if len(rows) == max_rows:
+                total_rows = con.execute(
+                    f"SELECT COUNT(*) FROM ({normalized_query}) AS result_set"
+                ).fetchone()[0]
         data = [dict(zip(columns, row)) for row in rows]
-        total = len(data)
-        return json.dumps(
-            {"columns": columns, "row_count": total, "data": data},
-            default=str,
+        response = QueryResult(
+            columns=columns,
+            row_count=total_rows,
+            returned_row_count=len(data),
+            truncated=total_rows > len(data),
+            data=data,
         )
+        return response.model_dump_json()
     except Exception as e:
-        return json.dumps({"error": str(e)})
+        return ErrorResult(error=str(e)).model_dump_json()

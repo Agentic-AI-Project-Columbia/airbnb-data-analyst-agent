@@ -1,0 +1,276 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T18:43:25.345738+00:00",
+    "total_duration_s": 273.0,
+    "num_models": 1,
+    "num_questions": 3,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 3,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      },
+      {
+        "id": 4,
+        "category": "Availability",
+        "question": "Which neighbourhoods have the highest and lowest availability throughout the year?"
+      },
+      {
+        "id": 5,
+        "category": "Reviews",
+        "question": "What are the most common complaints in guest reviews?"
+      },
+      {
+        "id": 6,
+        "category": "Geographic",
+        "question": "How does the density of listings compare across boroughs and what types dominate each area?"
+      },
+      {
+        "id": 7,
+        "category": "Amenities",
+        "question": "Do listings with more amenities charge higher prices and get better reviews?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "openai/gpt-5.4-mini",
+      "display_name": "GPT-5.4 Mini",
+      "provider": "openrouter",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 89.1,
+          "answer_len": 2994,
+          "answer_preview": "Pricing rises sharply with both borough and room type: **Manhattan is the most expensive borough across every major room type**, and **entire homes/apartments consistently cost far more than private rooms**. The clearest budget-friendly options are **private rooms in the Bronx and Queens**, while **",
+          "num_charts": 4,
+          "num_tool_calls": 9,
+          "num_agent_steps": 8,
+          "input_tokens": 48140,
+          "output_tokens": 9290,
+          "estimated_cost_usd": 0.04265,
+          "quality_score": 86,
+          "artifacts": [
+            "/artifacts/0903dc15/chart2_median_price_bars.png",
+            "/artifacts/7391173e/chart2_median_price_bars.png",
+            "/artifacts/c32e8e7a/borough_roomtype_median_heatmap.png",
+            "/artifacts/c32e8e7a/entire_home_premium_vs_private.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 9.593870162963867,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 5624,
+              "output_tokens": 1276,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 18.829030752182007,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 5741,
+              "output_tokens": 2240,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 44.4522602558136,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 24347,
+              "output_tokens": 3664,
+              "artifacts": [
+                "/artifacts/0903dc15/chart2_median_price_bars.png",
+                "/artifacts/7391173e/chart2_median_price_bars.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 16.266087770462036,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 12428,
+              "output_tokens": 2110,
+              "artifacts": [
+                "/artifacts/c32e8e7a/borough_roomtype_median_heatmap.png",
+                "/artifacts/c32e8e7a/entire_home_premium_vs_private.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 2,
+          "category": "Host Quality",
+          "question": "Do superhosts get better review scores than regular hosts?",
+          "status": "success",
+          "total_time_s": 102.6,
+          "answer_len": 2849,
+          "answer_preview": "Superhosts get better review scores than regular hosts across the board, and the gap is large enough to be visible in every review dimension. The strongest lift is in the overall rating, followed by cleanliness and value, while location shows the smallest difference.\n\n## Superhosts Lead on Every Rev",
+          "num_charts": 4,
+          "num_tool_calls": 5,
+          "num_agent_steps": 8,
+          "input_tokens": 23893,
+          "output_tokens": 4902,
+          "estimated_cost_usd": 0.02175,
+          "quality_score": 85,
+          "artifacts": [
+            "/artifacts/624cf878/superhost_review_scores_by_dimension.png",
+            "/artifacts/227ebe30/superhost_review_score_distribution.png",
+            "/artifacts/180f82c0/superhost_all_dimensions_comparison.png",
+            "/artifacts/180f82c0/superhost_score_gaps_by_dimension.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 4.317000865936279,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3039,
+              "output_tokens": 533,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 62.54892897605896,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 4393,
+              "output_tokens": 1152,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 19.572532892227173,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 7342,
+              "output_tokens": 1621,
+              "artifacts": [
+                "/artifacts/624cf878/superhost_review_scores_by_dimension.png",
+                "/artifacts/227ebe30/superhost_review_score_distribution.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 16.145451068878174,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 9119,
+              "output_tokens": 1596,
+              "artifacts": [
+                "/artifacts/180f82c0/superhost_all_dimensions_comparison.png",
+                "/artifacts/180f82c0/superhost_score_gaps_by_dimension.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 3,
+          "category": "Temporal",
+          "question": "How has host sign-up activity changed over the years?",
+          "status": "success",
+          "total_time_s": 80.2,
+          "answer_len": 2514,
+          "answer_preview": "Host sign-up activity followed a classic growth-and-maturity pattern: rapid expansion from 2008 to a mid-2010s peak, then a sustained slowdown with brief rebounds in 2019 and 2021. The clearest signal is that **2015 was the high-water mark** with **5,254** listings signed up that year, while **2022 ",
+          "num_charts": 4,
+          "num_tool_calls": 6,
+          "num_agent_steps": 8,
+          "input_tokens": 26871,
+          "output_tokens": 5453,
+          "estimated_cost_usd": 0.024342,
+          "quality_score": 88,
+          "artifacts": [
+            "/artifacts/7709cfce/host_signups_by_year.png",
+            "/artifacts/f21d0f62/host_signups_monthly_rolling.png",
+            "/artifacts/2b09b9e7/host_signup_period_comparison.png",
+            "/artifacts/2b09b9e7/host_signup_strongest_wave.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 5.191528558731079,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 4716,
+              "output_tokens": 503,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 28.571903705596924,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 4923,
+              "output_tokens": 1702,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 20.33300232887268,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 7301,
+              "output_tokens": 1535,
+              "artifacts": [
+                "/artifacts/7709cfce/host_signups_by_year.png",
+                "/artifacts/f21d0f62/host_signups_monthly_rolling.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 26.100062370300293,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 9931,
+              "output_tokens": 1713,
+              "artifacts": [
+                "/artifacts/2b09b9e7/host_signup_period_comparison.png",
+                "/artifacts/2b09b9e7/host_signup_strongest_wave.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 90.6,
+        "avg_score": 86.3,
+        "avg_charts": 4.0,
+        "total_cost_usd": 0.088742,
+        "total_input_tokens": 98904,
+        "total_output_tokens": 19645
+      }
+    }
+  ]
+}

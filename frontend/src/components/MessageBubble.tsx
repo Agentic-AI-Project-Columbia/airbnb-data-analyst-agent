@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -18,6 +19,8 @@ export type TraceStep = {
   ts: number;
   tables?: string[];
   row_count?: number;
+  returned_row_count?: number;
+  truncated?: boolean;
   columns?: string[];
   preview?: Record<string, unknown>[];
   exit_code?: number;
@@ -31,6 +34,7 @@ export type Message = {
   artifacts?: string[];
   agent?: string;
   trace?: TraceStep[];
+  question?: string;
 };
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -55,11 +59,13 @@ function ImageArtifact({
   return (
     <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
       {!failed ? (
-        <img
+        <Image
           src={artifactUrl}
           alt={artifactName}
+          width={1200}
+          height={800}
+          unoptimized
           className="w-full"
-          loading="lazy"
           onError={() => setFailed(true)}
         />
       ) : (
@@ -88,11 +94,13 @@ function InlineChartImage({ src, alt }: { src: string; alt: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return (
-    <img
+    <Image
       src={src}
       alt={alt}
+      width={1200}
+      height={800}
+      unoptimized
       className="inline-chart"
-      loading="lazy"
       onError={() => setFailed(true)}
     />
   );
@@ -100,10 +108,8 @@ function InlineChartImage({ src, alt }: { src: string; alt: string }) {
 
 function ShareButton({
   message,
-  userQuestion,
 }: {
   message: Message;
-  userQuestion?: string;
 }) {
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -121,7 +127,7 @@ function ShareButton({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: userQuestion || "",
+          question: message.question || "",
           answer: message.content,
           artifacts: message.artifacts || [],
           trace: message.trace || [],
@@ -211,11 +217,9 @@ function ShareButton({
 function MessageBubbleInner({
   message,
   schema,
-  userQuestion,
 }: {
   message: Message;
   schema: Record<string, TableSchema> | null;
-  userQuestion?: string;
 }) {
   if (message.role === "status") {
     return (
@@ -325,7 +329,7 @@ function MessageBubbleInner({
         })()}
 
         {!isUser && (
-          <ShareButton message={message} userQuestion={userQuestion} />
+          <ShareButton message={message} />
         )}
 
         {message.trace && message.trace.length > 0 && (

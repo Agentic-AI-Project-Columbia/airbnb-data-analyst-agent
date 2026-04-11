@@ -4,11 +4,19 @@ import { useState } from "react";
 
 type Props = {
   rowCount?: number;
+  returnedRowCount?: number;
+  truncated?: boolean;
   columns?: string[];
   preview?: Record<string, unknown>[];
 };
 
-export default function QueryResultSummary({ rowCount, columns, preview }: Props) {
+export default function QueryResultSummary({
+  rowCount,
+  returnedRowCount,
+  truncated,
+  columns,
+  preview,
+}: Props) {
   const [showPreview, setShowPreview] = useState(false);
 
   if (rowCount === undefined && !columns?.length) return null;
@@ -24,6 +32,11 @@ export default function QueryResultSummary({ rowCount, columns, preview }: Props
         {rowCount !== undefined && !columns && (
           <span className="result-badge">
             {rowCount.toLocaleString()} rows
+          </span>
+        )}
+        {truncated && rowCount !== undefined && returnedRowCount !== undefined && (
+          <span className="result-badge">
+            Showing {returnedRowCount.toLocaleString()} of {rowCount.toLocaleString()} rows
           </span>
         )}
       </div>
