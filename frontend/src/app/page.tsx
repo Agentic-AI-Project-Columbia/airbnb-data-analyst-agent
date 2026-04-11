@@ -114,8 +114,15 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  // Auto-scroll only for user messages (so the user sees their own question),
+  // not when the assistant response arrives (let them read from the top).
+  const lastMessageRef = useRef<string | null>(null);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const last = messages[messages.length - 1];
+    if (last && last.id !== lastMessageRef.current && last.role === "user") {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    if (last) lastMessageRef.current = last.id;
   }, [messages]);
 
   const addMessage = useCallback((msg: Message) => {
