@@ -77,7 +77,7 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'FRONTEND_URL=$$(gcloud run services describe airbnb-frontend --region=us-east1 --format="value(status.url)") && gcloud run services update airbnb-backend --region=us-east1 --update-env-vars "^,^CORS_ALLOW_ORIGINS=$${FRONTEND_URL},http://localhost:3000,http://127.0.0.1:3000"'
+      - 'FRONTEND_URL=$$(gcloud run services describe airbnb-frontend --region=us-east1 --format="value(status.url)") && gcloud run services update airbnb-backend --region=us-east1 --update-env-vars "^|^CORS_ALLOW_ORIGINS=$${FRONTEND_URL},http://localhost:3000,http://127.0.0.1:3000"'
 
 images:
   - 'us-east1-docker.pkg.dev/$PROJECT_ID/airbnb-repo/airbnb-backend:latest'
