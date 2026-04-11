@@ -1,0 +1,245 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T03:40:29.673901+00:00",
+    "total_duration_s": 144.4,
+    "num_models": 1,
+    "num_questions": 3,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 3,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "google/gemini-2.5-flash",
+      "display_name": "Gemini 2.5 Flash",
+      "provider": "vertex",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 52.7,
+          "answer_len": 0,
+          "answer_preview": "",
+          "num_charts": 0,
+          "num_tool_calls": 2,
+          "num_agent_steps": 8,
+          "input_tokens": 13669,
+          "output_tokens": 2634,
+          "estimated_cost_usd": 0.003631,
+          "quality_score": 33,
+          "artifacts": [],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 7.044306516647339,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 4909,
+              "output_tokens": 529,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 6.8015546798706055,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1788,
+              "output_tokens": 917,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 25.333351373672485,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 2642,
+              "output_tokens": 1188,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 13.520816326141357,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 4330,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 2,
+          "category": "Host Quality",
+          "question": "Do superhosts get better review scores than regular hosts?",
+          "status": "success",
+          "total_time_s": 47.3,
+          "answer_len": 3988,
+          "answer_preview": "## Superhosts Consistently Outperform in Guest Satisfaction\n\nSuperhosts consistently receive higher review scores across all categories when compared to regular hosts. This strong correlation suggests that the rigorous criteria for Superhost status are directly reflected in the quality of the guest ",
+          "num_charts": 4,
+          "num_tool_calls": 4,
+          "num_agent_steps": 11,
+          "input_tokens": 23491,
+          "output_tokens": 4772,
+          "estimated_cost_usd": 0.006387,
+          "quality_score": 86,
+          "artifacts": [
+            "/artifacts/d8dea2bc/avg_review_scores_by_host_status.png",
+            "/artifacts/c637112e/review_scores_rating_distribution.png",
+            "/artifacts/6c163796/chart_2.png",
+            "/artifacts/6c163796/host_engagement_rates.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 4.865248441696167,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3296,
+              "output_tokens": 566,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 5.215886116027832,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1810,
+              "output_tokens": 729,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 25.99326252937317,
+              "tool_calls": 2,
+              "agent_steps": 4,
+              "input_tokens": 10177,
+              "output_tokens": 2191,
+              "artifacts": [
+                "/artifacts/d8dea2bc/avg_review_scores_by_host_status.png",
+                "/artifacts/c637112e/review_scores_rating_distribution.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 11.209925651550293,
+              "tool_calls": 1,
+              "agent_steps": 3,
+              "input_tokens": 8208,
+              "output_tokens": 1286,
+              "artifacts": [
+                "/artifacts/6c163796/chart_2.png",
+                "/artifacts/6c163796/host_engagement_rates.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 3,
+          "category": "Temporal",
+          "question": "How has host sign-up activity changed over the years?",
+          "status": "success",
+          "total_time_s": 39.3,
+          "answer_len": 2559,
+          "answer_preview": "The cumulative number of Airbnb hosts in NYC has grown significantly since 2008, reaching over **19,000** by 2022. This demonstrates the continuous expansion of the platform's user base over time.\n![Cumulative Growth of Airbnb Host Community in NYC (2008-2022)](/artifacts/d58a6312/cumulative_hosts_g",
+          "num_charts": 4,
+          "num_tool_calls": 3,
+          "num_agent_steps": 10,
+          "input_tokens": 16538,
+          "output_tokens": 3985,
+          "estimated_cost_usd": 0.004872,
+          "quality_score": 88,
+          "artifacts": [
+            "/artifacts/f16ccd53/avg_listings_per_host_by_signup_year.png",
+            "/artifacts/f16ccd53/host_signup_trend.png",
+            "/artifacts/d58a6312/chart_2.png",
+            "/artifacts/d58a6312/cumulative_hosts_growth.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 4.101068019866943,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3279,
+              "output_tokens": 354,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 4.589437246322632,
+              "tool_calls": 0,
+              "agent_steps": 2,
+              "input_tokens": 1681,
+              "output_tokens": 0,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 17.154165983200073,
+              "tool_calls": 1,
+              "agent_steps": 3,
+              "input_tokens": 4680,
+              "output_tokens": 2024,
+              "artifacts": [
+                "/artifacts/f16ccd53/avg_listings_per_host_by_signup_year.png",
+                "/artifacts/f16ccd53/host_signup_trend.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 13.471007585525513,
+              "tool_calls": 1,
+              "agent_steps": 3,
+              "input_tokens": 6898,
+              "output_tokens": 1607,
+              "artifacts": [
+                "/artifacts/d58a6312/chart_2.png",
+                "/artifacts/d58a6312/cumulative_hosts_growth.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 46.4,
+        "avg_score": 69.0,
+        "avg_charts": 2.7,
+        "total_cost_usd": 0.01489,
+        "total_input_tokens": 53698,
+        "total_output_tokens": 11391
+      }
+    }
+  ]
+}

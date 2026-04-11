@@ -60,6 +60,7 @@ EVAL_MODELS: list[ModelSpec] = [
     # OpenRouter
     ModelSpec("openai/gpt-4.1", "GPT-4.1", "openrouter", 0.002, 0.008),
     ModelSpec("openai/gpt-4.1-nano", "GPT-4.1 Nano", "openrouter", 0.0001, 0.0004),
+    ModelSpec("openai/gpt-5.4-mini", "GPT-5.4 Mini", "openrouter", 0.0005, 0.002),
     ModelSpec("anthropic/claude-sonnet-4-6", "Claude Sonnet 4.6", "openrouter", 0.003, 0.015),
     ModelSpec("anthropic/claude-opus-4-6", "Claude Opus 4.6", "openrouter", 0.015, 0.075),
 ]
@@ -68,6 +69,10 @@ EVAL_QUESTIONS = [
     {"id": 1, "category": "Pricing",      "question": "How does pricing vary by room type across the five boroughs?"},
     {"id": 2, "category": "Host Quality",  "question": "Do superhosts get better review scores than regular hosts?"},
     {"id": 3, "category": "Temporal",      "question": "How has host sign-up activity changed over the years?"},
+    {"id": 4, "category": "Availability",  "question": "Which neighbourhoods have the highest and lowest availability throughout the year?"},
+    {"id": 5, "category": "Reviews",       "question": "What are the most common complaints in guest reviews?"},
+    {"id": 6, "category": "Geographic",    "question": "How does the density of listings compare across boroughs and what types dominate each area?"},
+    {"id": 7, "category": "Amenities",     "question": "Do listings with more amenities charge higher prices and get better reviews?"},
 ]
 
 STAGE_TIMEOUT = 180   # seconds per stage

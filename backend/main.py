@@ -34,7 +34,13 @@ openai_key = os.environ.get("OPENAI_API_KEY")
 
 MODEL_RUN_CONFIG = None  # will be set by whichever provider is configured
 
-if gcp_project:
+from agent_defs.config import DEFAULT_MODEL as _DEFAULT_MODEL
+
+# Route based on model name: google/ models go through Vertex AI, others through OpenRouter
+_use_vertex = _DEFAULT_MODEL.startswith("google/") and gcp_project
+_use_openrouter = not _use_vertex and openrouter_key
+
+if _use_vertex:
     import google.auth
     import google.auth.transport.requests
 
@@ -63,7 +69,7 @@ if gcp_project:
     set_tracing_disabled(True)
     print(f"Using Vertex AI  (project={gcp_project}, location={gcp_location})")
 
-elif openrouter_key:
+elif _use_openrouter:
     openrouter_client = AsyncOpenAI(
         api_key=openrouter_key,
         base_url="https://openrouter.ai/api/v1",
@@ -77,7 +83,7 @@ elif openrouter_key:
         )
     )
     set_tracing_disabled(True)
-    print("Using OpenRouter")
+    print(f"Using OpenRouter  (model={_DEFAULT_MODEL})")
 
 elif openai_key:
     print("Using direct OpenAI")
