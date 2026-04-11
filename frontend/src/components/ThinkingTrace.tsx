@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, memo, useMemo } from "react";
 import type { TraceStep } from "./MessageBubble";
 import type { TableSchema } from "./SqlQueryBlock";
@@ -371,12 +370,9 @@ function StageCard({
                       rel="noreferrer"
                       className="block w-32 h-24 rounded-lg overflow-hidden border border-[var(--color-border)] hover:border-[var(--color-coral)] transition-colors"
                     >
-                      <Image
+                      <img
                         src={url}
                         alt={name}
-                        width={128}
-                        height={96}
-                        unoptimized
                         className="w-full h-full object-cover"
                       />
                     </a>

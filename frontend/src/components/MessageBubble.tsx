@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -59,12 +58,9 @@ function ImageArtifact({
   return (
     <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
       {!failed ? (
-        <Image
+        <img
           src={artifactUrl}
           alt={artifactName}
-          width={1200}
-          height={800}
-          unoptimized
           className="w-full"
           onError={() => setFailed(true)}
         />
@@ -94,13 +90,10 @@ function InlineChartImage({ src, alt }: { src: string; alt: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return (
-    <Image
+    <img
       src={src}
       alt={alt}
-      width={1200}
-      height={800}
-      unoptimized
-      className="inline-chart"
+      className="inline-chart w-full rounded-lg"
       onError={() => setFailed(true)}
     />
   );

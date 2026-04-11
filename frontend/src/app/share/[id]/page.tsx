@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, use } from "react";
 import ReactMarkdown from "react-markdown";
@@ -26,12 +25,9 @@ function ImageArtifact({ url, name }: { url: string; name: string }) {
   return (
     <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
       {!failed ? (
-        <Image
+        <img
           src={url}
           alt={name}
-          width={1200}
-          height={800}
-          unoptimized
           className="w-full"
           onError={() => setFailed(true)}
         />
@@ -197,13 +193,10 @@ export default function SharePage({
                         ? `${BACKEND_URL}${srcStr}`
                         : srcStr;
                       return (
-                        <Image
+                        <img
                           src={resolvedSrc}
                           alt={alt || ""}
-                          width={1200}
-                          height={800}
-                          unoptimized
-                          className="inline-chart"
+                          className="inline-chart w-full rounded-lg"
                         />
                       );
                     },
