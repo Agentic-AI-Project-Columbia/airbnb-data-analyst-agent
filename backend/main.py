@@ -70,6 +70,8 @@ if _use_vertex:
     print(f"Using Vertex AI  (project={gcp_project}, location={gcp_location})")
 
 elif _use_openrouter:
+    # SDK internals may check OPENAI_API_KEY even with a custom provider
+    os.environ.setdefault("OPENAI_API_KEY", openrouter_key)
     openrouter_client = AsyncOpenAI(
         api_key=openrouter_key,
         base_url="https://openrouter.ai/api/v1",
