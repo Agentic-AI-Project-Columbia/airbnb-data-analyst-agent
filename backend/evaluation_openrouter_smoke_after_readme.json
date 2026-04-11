@@ -1,0 +1,197 @@
+{
+  "metadata": {
+    "run_date": "2026-04-11T18:54:04.716106+00:00",
+    "total_duration_s": 69.1,
+    "num_models": 1,
+    "num_questions": 1,
+    "questions": [
+      {
+        "id": 1,
+        "category": "Pricing",
+        "question": "How does pricing vary by room type across the five boroughs?"
+      },
+      {
+        "id": 2,
+        "category": "Host Concentration",
+        "question": "What are the top 10 neighbourhoods with the most listings per host?"
+      },
+      {
+        "id": 3,
+        "category": "Host Quality",
+        "question": "Do superhosts get better review scores than regular hosts?"
+      },
+      {
+        "id": 4,
+        "category": "Policy",
+        "question": "Which boroughs have the longest minimum stay requirements?"
+      },
+      {
+        "id": 5,
+        "category": "Text Analysis",
+        "question": "What words appear most often in negative reviews?"
+      },
+      {
+        "id": 6,
+        "category": "Temporal",
+        "question": "How has host sign-up activity changed over the years?"
+      },
+      {
+        "id": 7,
+        "category": "Geographic",
+        "question": "What is the price distribution for listings near Times Square?"
+      },
+      {
+        "id": 8,
+        "category": "Amenities",
+        "question": "Which amenities are most common in top-rated listings?"
+      },
+      {
+        "id": 9,
+        "category": "Host Behavior",
+        "question": "How does host response time affect booking availability?"
+      },
+      {
+        "id": 10,
+        "category": "Availability",
+        "question": "What percentage of listings are instantly bookable in each borough?"
+      },
+      {
+        "id": 11,
+        "category": "Trust",
+        "question": "Are there pricing differences between verified and unverified hosts?"
+      },
+      {
+        "id": 12,
+        "category": "Property Types",
+        "question": "What property types have the highest review volume per listing?"
+      },
+      {
+        "id": 13,
+        "category": "Intra-Borough",
+        "question": "How do review scores differ between Manhattan neighbourhoods?"
+      },
+      {
+        "id": 14,
+        "category": "Correlation",
+        "question": "What is the relationship between listing price and number of reviews?"
+      },
+      {
+        "id": 15,
+        "category": "Market",
+        "question": "Which hosts have the most listings across NYC?"
+      },
+      {
+        "id": 16,
+        "category": "Features",
+        "question": "How do accommodation capacity and bedrooms relate to price?"
+      },
+      {
+        "id": 17,
+        "category": "Quality Gap",
+        "question": "What share of listings in each borough have no reviews?"
+      },
+      {
+        "id": 18,
+        "category": "Seasonal",
+        "question": "How does review activity look month by month over time?"
+      },
+      {
+        "id": 19,
+        "category": "Targeted Text",
+        "question": "What do guests say about cleanliness in Brooklyn reviews?"
+      },
+      {
+        "id": 20,
+        "category": "Host Policy",
+        "question": "How does host acceptance rate vary between room types?"
+      }
+    ]
+  },
+  "models": [
+    {
+      "model_id": "openai/gpt-5.4-mini",
+      "display_name": "GPT-5.4 Mini",
+      "provider": "openrouter",
+      "results": [
+        {
+          "question_id": 1,
+          "category": "Pricing",
+          "question": "How does pricing vary by room type across the five boroughs?",
+          "status": "success",
+          "total_time_s": 68.1,
+          "answer_len": 3465,
+          "answer_preview": "Manhattan is the clear premium market across every room type, and hotel rooms are the priciest category overall. The gap is especially wide for private and shared rooms, while the Bronx is consistently the lowest-priced borough for most comparable listings.\n\n## Manhattan Sets the Price Ceiling\nManha",
+          "num_charts": 3,
+          "num_tool_calls": 6,
+          "num_agent_steps": 8,
+          "input_tokens": 35166,
+          "output_tokens": 8249,
+          "estimated_cost_usd": 0.034081,
+          "quality_score": 84,
+          "artifacts": [
+            "/artifacts/43769e74/borough_roomtype_avg_price.png",
+            "/artifacts/eed46bd8/borough_roomtype_median_heatmap.png",
+            "/artifacts/fda54eab/borough_roomtype_avg_price_bars.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 9.135279178619385,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 5488,
+              "output_tokens": 1186,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 17.253898859024048,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 6447,
+              "output_tokens": 2385,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 22.756911754608154,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 10645,
+              "output_tokens": 2803,
+              "artifacts": [
+                "/artifacts/43769e74/borough_roomtype_avg_price.png",
+                "/artifacts/eed46bd8/borough_roomtype_median_heatmap.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 18.99950623512268,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 12586,
+              "output_tokens": 1875,
+              "artifacts": [
+                "/artifacts/fda54eab/borough_roomtype_avg_price_bars.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        }
+      ],
+      "summary": {
+        "success_rate": 1.0,
+        "avg_time_s": 68.1,
+        "avg_score": 84.0,
+        "avg_charts": 3.0,
+        "total_cost_usd": 0.034081,
+        "total_input_tokens": 35166,
+        "total_output_tokens": 8249
+      }
+    }
+  ]
+}
