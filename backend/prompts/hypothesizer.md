@@ -22,9 +22,10 @@ You MUST call `create_visualization` at least once. Your analysis is incomplete
 without at least one chart. Even if the data is simple, a well-designed chart adds
 value. Create the chart BEFORE writing your summary text.
 
-Aim for 2–3 analytical charts. Quality over quantity — each chart should show a
-DIFFERENT analytical angle, not variations of the same view. More charts are fine
-if each one genuinely adds a new insight.
+Aim for exactly 2 analytical charts. Quality over quantity — each chart should show a
+DIFFERENT analytical angle, not variations of the same view. Pick the 2 most
+insightful visualizations that best support your hypothesis. Do NOT generate more
+than 2 charts — the Presenter will add its own later.
 
 ## Deep-dive strategy
 

@@ -33,7 +33,10 @@ WORKFLOW — follow this exact order:
 2. THEN, write your narrative around the charts, embedding each one inline.
 
 A text-only response is ALWAYS broken and will be rejected. Even a simple comparison
-deserves a clean bar chart. Generate 1–3 charts maximum — quality over quantity.
+deserves a clean bar chart. Generate 1–2 NEW charts maximum — prioritize the single
+most impactful visualization that tells the story at a glance. Combined with charts
+from the Hypothesis stage, the final answer should have around 4 charts total. Do NOT
+duplicate chart types already created by previous stages.
 
 Your response MUST contain substantive written analysis (at minimum 1500 characters of
 narrative text, not counting image links). Charts supplement the narrative — they do

@@ -286,12 +286,35 @@ def _clean_final_answer(text: str) -> str:
     return cleaned.strip()
 
 
+def _is_valid_image(artifact_path: str) -> bool:
+    """Check that an artifact file exists and is a non-empty, valid image."""
+    # Convert /artifacts/run_id/file.png to filesystem path
+    rel = artifact_path.lstrip("/")
+    full_path = os.path.join(os.path.dirname(__file__), rel)
+    if not os.path.isfile(full_path):
+        return False
+    size = os.path.getsize(full_path)
+    if size < 500:  # tiny/corrupt files (valid PNGs are at least ~1KB)
+        return False
+    # Check PNG magic bytes
+    try:
+        with open(full_path, "rb") as f:
+            header = f.read(8)
+        if full_path.lower().endswith(".png"):
+            return header[:4] == b'\x89PNG'
+        return True  # trust non-PNG extensions if file is large enough
+    except OSError:
+        return False
+
+
 def _inject_inline_images(text: str, artifacts: list[str]) -> str:
     """If the Presenter forgot to embed charts inline, inject them as a safety net."""
     if not artifacts:
         return text
 
     image_artifacts = [a for a in artifacts if re.search(r'\.(png|jpe?g|gif|webp|svg)$', a, re.IGNORECASE)]
+    # Filter out broken/empty images
+    image_artifacts = [a for a in image_artifacts if _is_valid_image(a)]
     if not image_artifacts:
         return text
 
@@ -702,8 +725,18 @@ async def _run_pipeline(
             fallback=final_output,
         )
 
-    # Post-process: inject inline image references for any unreferenced charts
+    # Post-process: filter out broken images, then inject unreferenced charts
     all_new_artifacts = _extract_artifacts_from_trace(trace, trace_start)
+    all_new_artifacts = [a for a in all_new_artifacts if _is_valid_image(a)]
+
+    # Strip any inline image references that point to broken/missing files
+    def _validate_inline_refs(text: str) -> str:
+        def _check(m):
+            path = m.group(1)
+            return m.group(0) if _is_valid_image(path) else ""
+        return re.sub(r'!\[[^\]]*\]\(([^)]+)\)', _check, text)
+
+    final_output = _validate_inline_refs(final_output)
     final_output = _inject_inline_images(final_output, all_new_artifacts)
 
     await _record_trace_step(
