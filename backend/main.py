@@ -294,6 +294,9 @@ def _clean_final_answer(text: str) -> str:
     return cleaned.strip()
 
 
+MAX_CHARTS = 4  # Hard cap on total charts in final output
+
+
 def _is_valid_image(artifact_path: str) -> bool:
     """Check that an artifact file exists and is a non-empty, valid image."""
     # Convert /artifacts/run_id/file.png to filesystem path
@@ -302,15 +305,20 @@ def _is_valid_image(artifact_path: str) -> bool:
     if not os.path.isfile(full_path):
         return False
     size = os.path.getsize(full_path)
-    if size < 500:  # tiny/corrupt files (valid PNGs are at least ~1KB)
+    if size < 2000:  # empty/blank charts are typically < 2KB
         return False
     # Check PNG magic bytes
     try:
         with open(full_path, "rb") as f:
             header = f.read(8)
         if full_path.lower().endswith(".png"):
-            return header[:4] == b'\x89PNG'
-        return True  # trust non-PNG extensions if file is large enough
+            if header[:4] != b'\x89PNG':
+                return False
+        # Check for blank/empty images: a mostly-white PNG will be very small
+        # relative to its dimensions. Real charts at 150dpi 10x6 are typically > 30KB.
+        if size < 5000:
+            return False
+        return True
     except OSError:
         return False
 
@@ -733,18 +741,45 @@ async def _run_pipeline(
             fallback=final_output,
         )
 
-    # Post-process: filter out broken images, then inject unreferenced charts
+    # Post-process: filter out broken/empty images and cap at MAX_CHARTS
     all_new_artifacts = _extract_artifacts_from_trace(trace, trace_start)
     all_new_artifacts = [a for a in all_new_artifacts if _is_valid_image(a)]
 
+    # Deduplicate: keep only uniquely-named charts (skip auto-saved chart_N.png
+    # duplicates if a named chart already exists from the same run)
+    seen_runs: dict[str, int] = {}  # run_id -> count of named charts
+    deduped: list[str] = []
+    for a in all_new_artifacts:
+        parts = a.strip("/").split("/")
+        if len(parts) >= 3:
+            run_id = parts[1]
+            filename = parts[2]
+            is_auto = bool(re.match(r'^chart_\d+\.png$', filename))
+            if is_auto and seen_runs.get(run_id, 0) > 0:
+                continue  # skip auto-saved duplicate
+            if not is_auto:
+                seen_runs[run_id] = seen_runs.get(run_id, 0) + 1
+        deduped.append(a)
+    all_new_artifacts = deduped[:MAX_CHARTS]  # hard cap
+
     # Strip any inline image references that point to broken/missing files
+    # and enforce the cap on already-embedded images too
+    valid_set = set(all_new_artifacts)
     def _validate_inline_refs(text: str) -> str:
+        kept = []
         def _check(m):
             path = m.group(1)
-            return m.group(0) if _is_valid_image(path) else ""
+            if not _is_valid_image(path):
+                return ""
+            if len(kept) >= MAX_CHARTS:
+                return ""
+            kept.append(path)
+            valid_set.add(path)
+            return m.group(0)
         return re.sub(r'!\[[^\]]*\]\(([^)]+)\)', _check, text)
 
     final_output = _validate_inline_refs(final_output)
+    all_new_artifacts = [a for a in all_new_artifacts if a in valid_set]
     final_output = _inject_inline_images(final_output, all_new_artifacts)
 
     await _record_trace_step(

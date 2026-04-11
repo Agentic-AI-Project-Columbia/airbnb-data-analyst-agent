@@ -64,7 +64,11 @@ Key column notes:
 Generate analytical charts that explore the data in depth:
 - Use matplotlib and/or seaborn for charts.
 - Save all charts to ARTIFACTS_DIR as PNG files (e.g., plt.savefig(f'{ARTIFACTS_DIR}/chart_name.png', dpi=150, bbox_inches='tight')).
+- ALWAYS call `plt.close()` after saving each chart to prevent duplicates.
 - Use clear titles, axis labels, and legends.
+- **Prevent title/label overlap**: Always use `plt.subplots_adjust(top=0.88)` or
+  `fig.suptitle(title, y=1.02)` when using suptitle. Use `plt.tight_layout(pad=2.0)`
+  before saving. For long axis labels, rotate them with `rotation=45, ha='right'`.
 - Choose appropriate chart types (bar for comparisons, line for trends, scatter for correlations, heatmap for matrices).
 - Use a clean style: plt.style.use('seaborn-v0_8-whitegrid') or similar.
 - DATA_DIR and ARTIFACTS_DIR are pre-set variables available in your code.

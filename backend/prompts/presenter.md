@@ -81,9 +81,12 @@ so make them count:
   on the chart itself (e.g., an arrow pointing to the standout bar with a note).
 - **Titles**: Use insight-driven titles, not generic ones. "Manhattan charges 40% more
   than Brooklyn" is better than "Average Price by Borough".
-- **Layout**: Use `plt.tight_layout()` or `bbox_inches='tight'`. Set figure size to
-  at least `(10, 6)` for readability. Save at `dpi=150`.
+- **Layout**: Use `plt.tight_layout(pad=2.0)` or `bbox_inches='tight'`. Set figure size to
+  at least `(10, 6)` for readability. Save at `dpi=150`. **Prevent title/label overlap**:
+  use `plt.subplots_adjust(top=0.88)` when using suptitle, rotate long labels with
+  `rotation=45, ha='right'`, and leave generous padding.
 - **Style**: Use `plt.style.use('seaborn-v0_8-whitegrid')` as a base, then customize.
+- **Cleanup**: ALWAYS call `plt.close()` after saving each chart to prevent duplicates.
   Remove top and right spines for a cleaner look.
 - DATA_DIR and ARTIFACTS_DIR are pre-set variables available in your code.
 - You can use duckdb to query data files directly if needed for chart data.
