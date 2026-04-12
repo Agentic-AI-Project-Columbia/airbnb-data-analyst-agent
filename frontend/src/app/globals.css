@@ -57,10 +57,43 @@ body {
   line-height: 1.7;
 }
 
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3,
+.prose-chat h4 {
+  color: var(--color-navy);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.15em 0 0.55em;
+}
+
+.prose-chat h1 {
+  font-size: 1.3rem;
+}
+
+.prose-chat h2 {
+  font-size: 1.14rem;
+}
+
+.prose-chat h3 {
+  font-size: 1.02rem;
+}
+
+.prose-chat h4 {
+  font-size: 0.98rem;
+}
+
+.prose-chat h1:first-child,
+.prose-chat h2:first-child,
+.prose-chat h3:first-child,
+.prose-chat h4:first-child {
+  margin-top: 0;
+}
+
 .prose-chat p { margin-bottom: 0.75em; }
 .prose-chat ul, .prose-chat ol { margin: 0.5em 0; padding-left: 1.5em; }
 .prose-chat li { margin-bottom: 0.25em; }
-.prose-chat strong { font-weight: 600; color: var(--color-navy); }
+.prose-chat strong { font-weight: 700; color: var(--color-navy); }
 .prose-chat code {
   background: var(--color-surface-alt);
   padding: 0.15em 0.4em;

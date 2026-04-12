@@ -123,7 +123,7 @@ Each section has:
 - A `## Bold Heading` that states the insight (not "Finding 1"). Use markdown `##` so
   headings render as bold section headers. Example: `## Manhattan Charges 40% More Than Brooklyn`
 - 2-3 sentences explaining what the data shows and why it matters
-- Specific numbers in **bold** as evidence
+- At least one specific number or key takeaway in **bold** as evidence
 - The supporting chart embedded right after with `![title](artifact_path)`
 
 ### What stands out (optional)
@@ -137,6 +137,7 @@ Only include if there are practical caveats that genuinely affect interpretation
 - Direct, confident tone - you are presenting findings, not hedging
 - Short paragraphs (2-3 sentences max)
 - **Bold** key numbers and takeaways
+- Keep markdown emphasis consistent. Every insight section should use a `##` heading and at least one `**bold**` metric or takeaway.
 - No "hypothesis", "conclusion", or "summary" framing - this is a briefing, not a paper
 - No section numbers - use `##` markdown headings with insight-driven titles
 - No filler, no restating the question, no "Great question!", no "Of course", no "Sure", no "Here is"

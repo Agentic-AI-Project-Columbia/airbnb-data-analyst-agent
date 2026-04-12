@@ -15,6 +15,52 @@ def safe_truncate(text: str, limit: int = 2000) -> str:
     return text[:limit] + f"\n... ({len(text) - limit} chars truncated)"
 
 
+def _looks_like_section_heading(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if stripped.startswith(("#", "-", "*", ">", "![", "```")):
+        return False
+    if stripped.endswith((".", "!", "?", ":", ";")):
+        return False
+    if len(stripped) > 90:
+        return False
+
+    words = re.findall(r"[A-Za-z][A-Za-z'/-]*", stripped)
+    if len(words) < 2:
+        return False
+
+    small_words = {"and", "or", "the", "a", "an", "to", "of", "in", "on", "for", "with", "by", "vs"}
+    title_like = sum(
+        1
+        for word in words
+        if word[0].isupper() or word.isupper() or word.lower() in small_words
+    )
+    return title_like / len(words) >= 0.7
+
+
+def _normalize_section_headings(text: str) -> str:
+    lines = text.splitlines()
+    normalized: list[str] = []
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+
+        if stripped in {"What stands out", "Things to keep in mind"}:
+            normalized.append(f"## {stripped}")
+            continue
+
+        prev_blank = i == 0 or lines[i - 1].strip() == ""
+        next_blank = i == len(lines) - 1 or lines[i + 1].strip() == ""
+        if prev_blank and next_blank and _looks_like_section_heading(stripped):
+            normalized.append(f"## {stripped}")
+            continue
+
+        normalized.append(line)
+
+    return "\n".join(normalized)
+
+
 def clean_final_answer(text: str) -> str:
     cleaned = text
     cleaned = re.sub(
@@ -35,6 +81,7 @@ def clean_final_answer(text: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    cleaned = _normalize_section_headings(cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     cleaned = re.sub(r"\n[ \t]+\n", "\n\n", cleaned)
     return cleaned.strip()

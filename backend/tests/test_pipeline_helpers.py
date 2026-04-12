@@ -22,6 +22,17 @@ class PipelineHelpersTest(unittest.TestCase):
         self.assertNotIn("chart.png", cleaned)
         self.assertIn("Final insight.", cleaned)
 
+    def test_clean_final_answer_promotes_plain_section_titles_to_headings(self) -> None:
+        raw = (
+            "Brooklyn has the broader mid-market.\n\n"
+            "Price Gap by Borough\n"
+            "\n"
+            "Brooklyn median prices remain below Manhattan."
+        )
+        cleaned = clean_final_answer(raw)
+
+        self.assertIn("## Price Gap by Borough", cleaned)
+
     def test_build_presenter_input_includes_existing_chart_context(self) -> None:
         prompt = build_presenter_input(
             "Which borough is priciest?",
