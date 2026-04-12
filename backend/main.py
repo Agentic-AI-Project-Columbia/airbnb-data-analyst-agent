@@ -8,19 +8,21 @@ import uuid
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from openai import AsyncOpenAI
-
-from agents import (
-    ItemHelpers,
-    MultiProvider,
-    RunConfig,
-    set_default_openai_client,
-    set_default_openai_key,
-    set_tracing_disabled,
-)
+from agents import ItemHelpers
 from runtime_config import get_cors_origins, load_project_dotenv
 
 load_project_dotenv()
+
+from agent_defs.config import DEFAULT_MODEL as _DEFAULT_MODEL
+from vertex_provider import create_vertex_run_config
+
+# ---------------------------------------------------------------------------
+# Provider setup: Vertex AI (Gemini)
+# ---------------------------------------------------------------------------
+MODEL_RUN_CONFIG, _vertex = create_vertex_run_config()
+_gcp_project = os.environ.get("GCP_PROJECT_ID", "")
+_gcp_location = os.environ.get("GCP_LOCATION", "us-central1")
+print(f"Using Vertex AI  (project={_gcp_project}, location={_gcp_location}, model={_DEFAULT_MODEL})")
 
 from agent_defs import analyst_agent, collector_agent, hypothesizer_agent, presenter_agent
 from pipeline import (
@@ -31,37 +33,6 @@ from pipeline import (
     clean_final_answer,
     safe_truncate,
 )
-
-# ---------------------------------------------------------------------------
-# Provider setup: OpenRouter only
-# ---------------------------------------------------------------------------
-openrouter_key = os.environ.get("OPENROUTER_API_KEY")
-
-from agent_defs.config import DEFAULT_MODEL as _DEFAULT_MODEL
-
-if not openrouter_key:
-    raise RuntimeError(
-        "OPENROUTER_API_KEY is required. "
-        "This project is currently configured to run through OpenRouter only."
-    )
-
-# Ensure SDK internals always find the key, even in fallback code paths
-os.environ["OPENAI_API_KEY"] = openrouter_key
-set_default_openai_key(openrouter_key)
-openrouter_client = AsyncOpenAI(
-    api_key=openrouter_key,
-    base_url="https://openrouter.ai/api/v1",
-)
-set_default_openai_client(openrouter_client, use_for_tracing=False)
-MODEL_RUN_CONFIG = RunConfig(
-    model_provider=MultiProvider(
-        openai_client=openrouter_client,
-        openai_prefix_mode="model_id",
-        unknown_prefix_mode="model_id",
-    )
-)
-set_tracing_disabled(True)
-print(f"Using OpenRouter  (model={_DEFAULT_MODEL})")
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware

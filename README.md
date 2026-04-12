@@ -4,7 +4,7 @@
 
 **Live demo:** [airbnb-frontend-686529012610.us-east1.run.app](https://airbnb-frontend-686529012610.us-east1.run.app) | **API:** [airbnb-backend-686529012610.us-east1.run.app](https://airbnb-backend-686529012610.us-east1.run.app)
 
-A four-stage agent pipeline (Collect -> Analyze -> Hypothesize -> Present) runs over 37K Airbnb listings, 985K reviews, and 230 neighbourhood mappings from [Inside Airbnb](http://insideairbnb.com/). Each agent writes and executes its own SQL/Python at runtime. The frontend streams every agent action over WebSocket so you can watch the pipeline think. Typical end-to-end latency is 60-90 seconds on `openai/gpt-5.4-mini` via OpenRouter.
+A four-stage agent pipeline (Collect -> Analyze -> Hypothesize -> Present) runs over 37K Airbnb listings, 985K reviews, and 230 neighbourhood mappings from [Inside Airbnb](http://insideairbnb.com/). Each agent writes and executes its own SQL/Python at runtime. The frontend streams every agent action over WebSocket so you can watch the pipeline think. Typical end-to-end latency is 40-60 seconds on Gemini 3.1 Flash Lite via Google Vertex AI.
 
 Arjun Varma & Oranich Jamkachornkiat -- Columbia University, Agentic AI, Spring 2026
 
@@ -202,10 +202,10 @@ Data is baked into the backend Docker image at build time -- the running contain
 
 ## Model Configuration
 
-- **Default model:** `openai/gpt-5.4-mini` via OpenRouter (configurable via `AGENT_MODEL` env var)
-- **Provider:** OpenRouter only -- single `OPENROUTER_API_KEY` required
+- **Default model:** `google/gemini-3.1-flash-lite-preview` via Google Vertex AI (configurable via `AGENT_MODEL` env var)
+- **Provider:** Google Vertex AI -- uses Application Default Credentials (`gcloud auth application-default login`), requires `GCP_PROJECT_ID` env var
 - **Prompts:** Dedicated markdown files in `backend/prompts/`, with `{SCHEMA_INFO}` placeholders replaced at startup from live DuckDB metadata
-- **Evaluation:** `backend/evaluate.py` benchmarks the pipeline against a 20-question suite across configurable OpenRouter models, scoring on success, charts, depth, efficiency, and speed
+- **Evaluation:** `backend/evaluate.py` benchmarks the pipeline against a 20-question suite across configurable Vertex AI models, scoring on success, charts, depth, efficiency, and speed
 
 ---
 
@@ -215,7 +215,8 @@ Data is baked into the backend Docker image at build time -- the running contain
 
 ```
 openai-agents>=0.7.0        # Agent framework
-openai>=1.0.0               # OpenRouter-compatible client
+openai>=1.0.0               # Vertex AI OpenAI-compatible client
+google-auth>=2.29.0         # GCP credential management
 fastapi>=0.115.0            # REST + WebSocket API
 uvicorn[standard]>=0.34.0   # ASGI server
 duckdb>=1.2.0               # In-process OLAP engine
@@ -262,10 +263,10 @@ Next.js 16.2.2, React 19.2.4, TypeScript 5, Tailwind CSS 4, react-markdown 10.1.
 
 ## Evaluation
 
-Validated against 20 analytical questions (pricing, hosts, text analysis, geography, amenities, availability, quality, trends) with **100% success rate**. The evaluation harness (`backend/evaluate.py`) collects per-stage metrics and scores on five dimensions: success, chart quantity, answer depth, tool-call efficiency, and speed.
+Validated against 20 analytical questions (pricing, hosts, text analysis, geography, amenities, availability, quality, trends) with **100% success rate** and an average quality score of **91/100** on Gemini 3.1 Flash Lite. The evaluation harness (`backend/evaluate.py`) collects per-stage metrics and scores on five dimensions: success, chart quantity, answer depth, tool-call efficiency, and speed.
 
 ---
 
 Arjun Varma & Oranich Jamkachornkiat | Columbia University -- Agentic AI, Spring 2026
 
-Data source: [Inside Airbnb](http://insideairbnb.com/) (NYC, 2022). Built with the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), [DuckDB](https://duckdb.org/), [FastAPI](https://fastapi.tiangolo.com/), [Next.js](https://nextjs.org/), and [Google Cloud Run](https://cloud.google.com/run).
+Data source: [Inside Airbnb](http://insideairbnb.com/) (NYC, 2022). Built with the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), [Google Vertex AI](https://cloud.google.com/vertex-ai), [DuckDB](https://duckdb.org/), [FastAPI](https://fastapi.tiangolo.com/), [Next.js](https://nextjs.org/), and [Google Cloud Run](https://cloud.google.com/run).

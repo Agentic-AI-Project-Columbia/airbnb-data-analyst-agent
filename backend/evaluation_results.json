@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "run_date": "2026-04-10T23:00:13.694387+00:00",
-    "total_duration_s": 3261.7,
-    "num_models": 7,
-    "num_questions": 3,
+    "run_date": "2026-04-11T23:55:27.777752+00:00",
+    "total_duration_s": 2635.7,
+    "num_models": 1,
+    "num_questions": 20,
     "questions": [
       {
         "id": 1,
@@ -12,1353 +12,1592 @@
       },
       {
         "id": 2,
+        "category": "Host Concentration",
+        "question": "What are the top 10 neighbourhoods with the most listings per host?"
+      },
+      {
+        "id": 3,
         "category": "Host Quality",
         "question": "Do superhosts get better review scores than regular hosts?"
       },
       {
-        "id": 3,
+        "id": 4,
+        "category": "Policy",
+        "question": "Which boroughs have the longest minimum stay requirements?"
+      },
+      {
+        "id": 5,
+        "category": "Text Analysis",
+        "question": "What words appear most often in negative reviews?"
+      },
+      {
+        "id": 6,
         "category": "Temporal",
         "question": "How has host sign-up activity changed over the years?"
+      },
+      {
+        "id": 7,
+        "category": "Geographic",
+        "question": "What is the price distribution for listings near Times Square?"
+      },
+      {
+        "id": 8,
+        "category": "Amenities",
+        "question": "Which amenities are most common in top-rated listings?"
+      },
+      {
+        "id": 9,
+        "category": "Host Behavior",
+        "question": "How does host response time affect booking availability?"
+      },
+      {
+        "id": 10,
+        "category": "Availability",
+        "question": "What percentage of listings are instantly bookable in each borough?"
+      },
+      {
+        "id": 11,
+        "category": "Trust",
+        "question": "Are there pricing differences between verified and unverified hosts?"
+      },
+      {
+        "id": 12,
+        "category": "Property Types",
+        "question": "What property types have the highest review volume per listing?"
+      },
+      {
+        "id": 13,
+        "category": "Intra-Borough",
+        "question": "How do review scores differ between Manhattan neighbourhoods?"
+      },
+      {
+        "id": 14,
+        "category": "Correlation",
+        "question": "What is the relationship between listing price and number of reviews?"
+      },
+      {
+        "id": 15,
+        "category": "Market",
+        "question": "Which hosts have the most listings across NYC?"
+      },
+      {
+        "id": 16,
+        "category": "Features",
+        "question": "How do accommodation capacity and bedrooms relate to price?"
+      },
+      {
+        "id": 17,
+        "category": "Quality Gap",
+        "question": "What share of listings in each borough have no reviews?"
+      },
+      {
+        "id": 18,
+        "category": "Seasonal",
+        "question": "How does review activity look month by month over time?"
+      },
+      {
+        "id": 19,
+        "category": "Targeted Text",
+        "question": "What do guests say about cleanliness in Brooklyn reviews?"
+      },
+      {
+        "id": 20,
+        "category": "Host Policy",
+        "question": "How does host acceptance rate vary between room types?"
       }
     ]
   },
   "models": [
     {
-      "model_id": "google/gemini-2.5-pro",
-      "display_name": "Gemini 2.5 Pro",
+      "model_id": "google/gemini-3-flash-preview",
+      "display_name": "Gemini 3 Flash",
       "provider": "vertex",
       "results": [
         {
           "question_id": 1,
           "category": "Pricing",
           "question": "How does pricing vary by room type across the five boroughs?",
-          "status": "timeout",
-          "total_time_s": 292.7,
-          "answer_len": 0,
-          "answer_preview": "",
-          "num_charts": 0,
-          "num_tool_calls": 0,
-          "num_agent_steps": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
-          "estimated_cost_usd": 0.0,
-          "quality_score": 3,
-          "artifacts": [],
-          "stages": [],
-          "error": "Pipeline timed out after 420s"
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "timeout",
-          "total_time_s": 276.9,
-          "answer_len": 0,
-          "answer_preview": "",
-          "num_charts": 0,
-          "num_tool_calls": 0,
-          "num_agent_steps": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
-          "estimated_cost_usd": 0.0,
-          "quality_score": 4,
-          "artifacts": [],
-          "stages": [],
-          "error": "Pipeline timed out after 420s"
-        },
-        {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
           "status": "success",
-          "total_time_s": 183.2,
-          "answer_len": 3366,
-          "answer_preview": "Host sign-up activity in NYC shows a clear shift from a period of explosive growth to one of market maturity and decline. The number of new hosts joining the platform peaked in **2015** and has been on a downward trend since, a pattern that was significantly accelerated by the COVID-19 pandemic.\n\n##",
-          "num_charts": 6,
-          "num_tool_calls": 7,
-          "num_agent_steps": 9,
-          "input_tokens": 45684,
-          "output_tokens": 8750,
-          "estimated_cost_usd": 0.100855,
-          "quality_score": 93,
+          "total_time_s": 119.4,
+          "answer_len": 4893,
+          "answer_preview": "Manhattan remains the most expensive borough for every room type, with median prices for entire homes and apartments reaching **$200 per night**, while the other four boroughs exhibit a consistent \"commodity floor\" for private rooms at approximately **$65 per night**.\n\n## Manhattan Charges a 58% Pre",
+          "num_charts": 4,
+          "num_tool_calls": 9,
+          "num_agent_steps": 8,
+          "input_tokens": 66454,
+          "output_tokens": 9282,
+          "estimated_cost_usd": 0.015537,
+          "quality_score": 91,
           "artifacts": [
-            "/artifacts/3f1df1d6/cumulative_host_growth_by_borough.png",
-            "/artifacts/3f1df1d6/host_signup_trends_by_borough.png",
-            "/artifacts/3f1df1d6/host_signup_trends_overall.png",
-            "/artifacts/3f1df1d6/new_superhosts_vs_regular_hosts.png",
-            "/artifacts/75d2a19f/chart_2.png",
-            "/artifacts/75d2a19f/nyc_host_signup_trends_annotated.png"
+            "/artifacts/e638442f/price_distribution_stats.csv",
+            "/artifacts/fb6a61c3/borough_price_tiers.csv",
+            "/artifacts/fb6a61c3/review_stats_by_group.csv",
+            "/artifacts/aba14a73/neighborhood_median_prices.csv",
+            "/artifacts/2da4f6d7/density_vs_price.png",
+            "/artifacts/2da4f6d7/price_dist_boxplot.png",
+            "/artifacts/804035c3/median_price_comparison.png",
+            "/artifacts/c664885b/price_vs_rating.png"
           ],
           "stages": [
             {
               "name": "Data Collector",
-              "time_s": 21.619017362594604,
+              "time_s": 11.586660385131836,
               "tool_calls": 1,
               "agent_steps": 2,
-              "input_tokens": 3122,
-              "output_tokens": 633,
+              "input_tokens": 3583,
+              "output_tokens": 1173,
               "artifacts": [],
               "error": null
             },
             {
               "name": "EDA Analyst",
-              "time_s": 52.6023428440094,
-              "tool_calls": 3,
+              "time_s": 50.706193923950195,
+              "tool_calls": 5,
               "agent_steps": 2,
-              "input_tokens": 16311,
-              "output_tokens": 2557,
-              "artifacts": [],
+              "input_tokens": 33988,
+              "output_tokens": 3677,
+              "artifacts": [
+                "/artifacts/e638442f/price_distribution_stats.csv",
+                "/artifacts/fb6a61c3/borough_price_tiers.csv",
+                "/artifacts/fb6a61c3/review_stats_by_group.csv",
+                "/artifacts/aba14a73/neighborhood_median_prices.csv"
+              ],
               "error": null
             },
             {
               "name": "Hypothesis Generator",
-              "time_s": 52.659839153289795,
-              "tool_calls": 2,
-              "agent_steps": 3,
-              "input_tokens": 12758,
-              "output_tokens": 3474,
+              "time_s": 25.937700986862183,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 9505,
+              "output_tokens": 1936,
               "artifacts": [
-                "/artifacts/3f1df1d6/cumulative_host_growth_by_borough.png",
-                "/artifacts/3f1df1d6/host_signup_trends_by_borough.png",
-                "/artifacts/3f1df1d6/host_signup_trends_overall.png",
-                "/artifacts/3f1df1d6/new_superhosts_vs_regular_hosts.png"
+                "/artifacts/2da4f6d7/density_vs_price.png",
+                "/artifacts/2da4f6d7/price_dist_boxplot.png"
               ],
               "error": null
             },
             {
               "name": "Presenter",
-              "time_s": 56.34373068809509,
-              "tool_calls": 1,
+              "time_s": 31.119767904281616,
+              "tool_calls": 2,
               "agent_steps": 2,
-              "input_tokens": 13493,
-              "output_tokens": 2086,
+              "input_tokens": 19378,
+              "output_tokens": 2496,
               "artifacts": [
-                "/artifacts/75d2a19f/chart_2.png",
-                "/artifacts/75d2a19f/nyc_host_signup_trends_annotated.png"
+                "/artifacts/804035c3/median_price_comparison.png",
+                "/artifacts/c664885b/price_vs_rating.png"
               ],
               "error": null
             }
           ],
           "error": null
-        }
-      ],
-      "summary": {
-        "success_rate": 0.3333333333333333,
-        "avg_time_s": 183.2,
-        "avg_score": 93.0,
-        "avg_charts": 6.0,
-        "total_cost_usd": 0.100855,
-        "total_input_tokens": 45684,
-        "total_output_tokens": 8750
-      }
-    },
-    {
-      "model_id": "google/gemini-2.5-flash",
-      "display_name": "Gemini 2.5 Flash",
-      "provider": "vertex",
-      "results": [
+        },
         {
-          "question_id": 1,
-          "category": "Pricing",
-          "question": "How does pricing vary by room type across the five boroughs?",
+          "question_id": 2,
+          "category": "Host Concentration",
+          "question": "What are the top 10 neighbourhoods with the most listings per host?",
           "status": "success",
-          "total_time_s": 62.5,
-          "answer_len": 3228,
-          "answer_preview": "## Manhattan Dominates with Highest Airbnb Prices\n\nManhattan consistently shows the highest average prices across all room types, making it the most expensive borough for Airbnb accommodations. An \"Entire home/apt\" in Manhattan averages **$292**, significantly higher than in other boroughs. The most",
-          "num_charts": 2,
-          "num_tool_calls": 4,
-          "num_agent_steps": 9,
-          "input_tokens": 21708,
-          "output_tokens": 5118,
-          "estimated_cost_usd": 0.006327,
+          "total_time_s": 151.6,
+          "answer_len": 4658,
+          "answer_preview": "Woodside, Queens, and the Theater District in Manhattan lead the city in listing density, with nearly **4 listings for every unique host** in the most concentrated pockets. \n\n## High-Density Neighborhoods are Driven by Commercial Operations\nThe analysis reveals that the top 10 neighborhoods with the",
+          "num_charts": 4,
+          "num_tool_calls": 11,
+          "num_agent_steps": 8,
+          "input_tokens": 209215,
+          "output_tokens": 13282,
+          "estimated_cost_usd": 0.039351,
           "quality_score": 88,
           "artifacts": [
-            "/artifacts/0748ed89/average_price_by_room_type_and_borough.png",
-            "/artifacts/0748ed89/chart_2.png"
+            "/artifacts/cf68dd2c/top_10_nh_listing_density.csv",
+            "/artifacts/dcc7e33a/top_10_density_summary.csv",
+            "/artifacts/2a18a9bd/density_models.png",
+            "/artifacts/2a18a9bd/ownership_concentration.png",
+            "/artifacts/3c223397/professional_correlation.png",
+            "/artifacts/3c223397/top_10_density.png"
           ],
           "stages": [
             {
               "name": "Data Collector",
-              "time_s": 5.262702941894531,
+              "time_s": 10.809324502944946,
               "tool_calls": 2,
               "agent_steps": 2,
-              "input_tokens": 4909,
+              "input_tokens": 5197,
+              "output_tokens": 732,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 72.89981627464294,
+              "tool_calls": 6,
+              "agent_steps": 2,
+              "input_tokens": 175909,
+              "output_tokens": 5962,
+              "artifacts": [
+                "/artifacts/cf68dd2c/top_10_nh_listing_density.csv",
+                "/artifacts/dcc7e33a/top_10_density_summary.csv"
+              ],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 43.72507882118225,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 16299,
+              "output_tokens": 4532,
+              "artifacts": [
+                "/artifacts/2a18a9bd/density_models.png",
+                "/artifacts/2a18a9bd/ownership_concentration.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 24.154690742492676,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11810,
+              "output_tokens": 2056,
+              "artifacts": [
+                "/artifacts/3c223397/professional_correlation.png",
+                "/artifacts/3c223397/top_10_density.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 3,
+          "category": "Host Quality",
+          "question": "Do superhosts get better review scores than regular hosts?",
+          "status": "success",
+          "total_time_s": 134.1,
+          "answer_len": 4691,
+          "answer_preview": "Superhosts consistently receive higher review scores than regular hosts, maintaining a city-wide average of **4.85** compared to the **4.55** average of their counterparts. This performance gap is not isolated to a specific borough or property type; rather, it represents a fundamental difference in ",
+          "num_charts": 4,
+          "num_tool_calls": 13,
+          "num_agent_steps": 8,
+          "input_tokens": 75194,
+          "output_tokens": 10801,
+          "estimated_cost_usd": 0.01776,
+          "quality_score": 83,
+          "artifacts": [
+            "/artifacts/3b0d485d/rating_distribution.png",
+            "/artifacts/3b0d485d/subscore_comparison.png",
+            "/artifacts/21c745f2/borough_comparison.png",
+            "/artifacts/21c745f2/experience_gap.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 11.276252508163452,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 6036,
+              "output_tokens": 1258,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 50.986567735672,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 24149,
+              "output_tokens": 3978,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 40.19380474090576,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 26553,
+              "output_tokens": 2744,
+              "artifacts": [
+                "/artifacts/3b0d485d/rating_distribution.png",
+                "/artifacts/3b0d485d/subscore_comparison.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 31.67507553100586,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 18456,
+              "output_tokens": 2821,
+              "artifacts": [
+                "/artifacts/21c745f2/borough_comparison.png",
+                "/artifacts/21c745f2/experience_gap.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 4,
+          "category": "Policy",
+          "question": "Which boroughs have the longest minimum stay requirements?",
+          "status": "success",
+          "total_time_s": 111.8,
+          "answer_len": 3729,
+          "answer_preview": "Manhattan and Brooklyn have the longest minimum stay requirements in New York City, with the majority of their inventory effectively restricted to stays of **30 days or longer**.\n\n## Manhattan and Brooklyn Define the \"30-Day Divide\"\nThe data reveals a stark contrast between the city's central hubs a",
+          "num_charts": 4,
+          "num_tool_calls": 9,
+          "num_agent_steps": 8,
+          "input_tokens": 55417,
+          "output_tokens": 8982,
+          "estimated_cost_usd": 0.013702,
+          "quality_score": 91,
+          "artifacts": [
+            "/artifacts/d5b1c679/manhattan_compliance_gap.png",
+            "/artifacts/d5b1c679/stay_duration_distribution.png",
+            "/artifacts/64f6a60f/median_stay_borough.png",
+            "/artifacts/64f6a60f/price_stay_comparison.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 11.524691820144653,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 7845,
+              "output_tokens": 1094,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 46.9993417263031,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 26301,
+              "output_tokens": 3524,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 29.803531408309937,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 9062,
+              "output_tokens": 2437,
+              "artifacts": [
+                "/artifacts/d5b1c679/manhattan_compliance_gap.png",
+                "/artifacts/d5b1c679/stay_duration_distribution.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 23.43243956565857,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 12209,
+              "output_tokens": 1927,
+              "artifacts": [
+                "/artifacts/64f6a60f/median_stay_borough.png",
+                "/artifacts/64f6a60f/price_stay_comparison.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 5,
+          "category": "Text Analysis",
+          "question": "What words appear most often in negative reviews?",
+          "status": "success",
+          "total_time_s": 202.2,
+          "answer_len": 4982,
+          "answer_preview": "Dissatisfaction in NYC Airbnbs is defined by a lack of cleanliness and communication breakdowns, with the word **\"dirty\"** appearing **83 times more frequently** in negative reviews than in positive ones.\n\n## The \"Red Flag\" Indicators: Words that Signal a Bad Experience\nWhile many words appear in re",
+          "num_charts": 4,
+          "num_tool_calls": 11,
+          "num_agent_steps": 8,
+          "input_tokens": 271977,
+          "output_tokens": 10420,
+          "estimated_cost_usd": 0.047049,
+          "quality_score": 85,
+          "artifacts": [
+            "/artifacts/fb46c5c0/keyword_frequency_comparison.png",
+            "/artifacts/fb46c5c0/review_length_vs_rating.png",
+            "/artifacts/8f75603e/complaint_themes.png",
+            "/artifacts/8f75603e/red_flag_indicators.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 22.127499103546143,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 13368,
+              "output_tokens": 1711,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 99.00051140785217,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 238102,
+              "output_tokens": 4304,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 50.80230379104614,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 8732,
+              "output_tokens": 2342,
+              "artifacts": [
+                "/artifacts/fb46c5c0/keyword_frequency_comparison.png",
+                "/artifacts/fb46c5c0/review_length_vs_rating.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 30.255733013153076,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11775,
+              "output_tokens": 2063,
+              "artifacts": [
+                "/artifacts/8f75603e/complaint_themes.png",
+                "/artifacts/8f75603e/red_flag_indicators.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 6,
+          "category": "Temporal",
+          "question": "How has host sign-up activity changed over the years?",
+          "status": "success",
+          "total_time_s": 157.7,
+          "answer_len": 4261,
+          "answer_preview": "Host sign-up activity in NYC reached a historic peak in **2015**, followed by a steady market maturation and a sharp **48% crash** during the 2020 pandemic, before a professional-led recovery began in 2021. This evolution marks a fundamental shift from a community of individual home-sharers to a mar",
+          "num_charts": 6,
+          "num_tool_calls": 15,
+          "num_agent_steps": 8,
+          "input_tokens": 255016,
+          "output_tokens": 11479,
+          "estimated_cost_usd": 0.04514,
+          "quality_score": 81,
+          "artifacts": [
+            "/artifacts/86f2357d/cohort_analysis.csv",
+            "/artifacts/86f2357d/yearly_host_stats.csv",
+            "/artifacts/027d8a82/host_professionalization.png",
+            "/artifacts/027d8a82/room_type_evolution.png",
+            "/artifacts/262de7a4/host_professionalization_refined.png",
+            "/artifacts/262de7a4/room_type_evolution_area.png",
+            "/artifacts/5c27a532/borough_competition.png",
+            "/artifacts/5c27a532/yearly_signups_trend.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 14.455725193023682,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 10771,
+              "output_tokens": 1184,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 57.60534715652466,
+              "tool_calls": 7,
+              "agent_steps": 2,
+              "input_tokens": 207175,
+              "output_tokens": 2930,
+              "artifacts": [
+                "/artifacts/86f2357d/cohort_analysis.csv",
+                "/artifacts/86f2357d/yearly_host_stats.csv"
+              ],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 43.95184135437012,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 16707,
+              "output_tokens": 3856,
+              "artifacts": [
+                "/artifacts/027d8a82/host_professionalization.png",
+                "/artifacts/027d8a82/room_type_evolution.png",
+                "/artifacts/262de7a4/host_professionalization_refined.png",
+                "/artifacts/262de7a4/room_type_evolution_area.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 41.71579933166504,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 20363,
+              "output_tokens": 3509,
+              "artifacts": [
+                "/artifacts/5c27a532/borough_competition.png",
+                "/artifacts/5c27a532/yearly_signups_trend.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 7,
+          "category": "Geographic",
+          "question": "What is the price distribution for listings near Times Square?",
+          "status": "success",
+          "total_time_s": 103.3,
+          "answer_len": 4785,
+          "answer_preview": "The majority of listings near Times Square are priced between **$100 and $300**, but a simple 10-minute walk away from the 42nd Street hub can reduce nightly accommodation costs by nearly **50%**. While the area is dominated by high-priced options, travelers who understand the \"proximity premium\" an",
+          "num_charts": 4,
+          "num_tool_calls": 9,
+          "num_agent_steps": 8,
+          "input_tokens": 117693,
+          "output_tokens": 8331,
+          "estimated_cost_usd": 0.022653,
+          "quality_score": 92,
+          "artifacts": [
+            "/artifacts/815a57d2/distance_decay_analysis.png",
+            "/artifacts/815a57d2/price_neighborhood_breakdown.png",
+            "/artifacts/dc507334/price_distribution_buckets.png",
+            "/artifacts/dc507334/value_paradox_comparison.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 15.636690855026245,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 10215,
+              "output_tokens": 1876,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 31.191012144088745,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 86586,
+              "output_tokens": 2365,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 27.26132845878601,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 9094,
+              "output_tokens": 2011,
+              "artifacts": [
+                "/artifacts/815a57d2/distance_decay_analysis.png",
+                "/artifacts/815a57d2/price_neighborhood_breakdown.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 29.21944570541382,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11798,
+              "output_tokens": 2079,
+              "artifacts": [
+                "/artifacts/dc507334/price_distribution_buckets.png",
+                "/artifacts/dc507334/value_paradox_comparison.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 8,
+          "category": "Amenities",
+          "question": "Which amenities are most common in top-rated listings?",
+          "status": "success",
+          "total_time_s": 111.2,
+          "answer_len": 4845,
+          "answer_preview": "Top-rated listings in New York City are built on a foundation of universal essentials like **Wifi** and **Smoke Alarms**, but they achieve their high status through \"hospitality differentiators\"\u2014specific amenities like **Coffee Makers**, **Dishwashers**, and **Automated Check-in** that provide enhan",
+          "num_charts": 4,
+          "num_tool_calls": 9,
+          "num_agent_steps": 8,
+          "input_tokens": 71842,
+          "output_tokens": 9663,
+          "estimated_cost_usd": 0.016574,
+          "quality_score": 91,
+          "artifacts": [
+            "/artifacts/255673bc/amenity_lift_comparison.png",
+            "/artifacts/255673bc/comfort_impact_by_price.png",
+            "/artifacts/6369c6f1/checkin_comparison.png",
+            "/artifacts/6369c6f1/top_amenities_frequency.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 10.26483154296875,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 4973,
+              "output_tokens": 670,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 30.920116424560547,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 40265,
+              "output_tokens": 2713,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 45.976370096206665,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 15164,
+              "output_tokens": 4064,
+              "artifacts": [
+                "/artifacts/255673bc/amenity_lift_comparison.png",
+                "/artifacts/255673bc/comfort_impact_by_price.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 24.029969692230225,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11440,
+              "output_tokens": 2216,
+              "artifacts": [
+                "/artifacts/6369c6f1/checkin_comparison.png",
+                "/artifacts/6369c6f1/top_amenities_frequency.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 9,
+          "category": "Host Behavior",
+          "question": "How does host response time affect booking availability?",
+          "status": "success",
+          "total_time_s": 169.7,
+          "answer_len": 5027,
+          "answer_preview": "Host response speed is a proxy for **professionalized management** rather than a direct driver of calendar scarcity. While conventional wisdom suggests that the most active hosts would be \"fully booked\" and thus have the lowest availability, the data reveals a \"Response Paradox\": the fastest-respond",
+          "num_charts": 4,
+          "num_tool_calls": 15,
+          "num_agent_steps": 8,
+          "input_tokens": 103545,
+          "output_tokens": 11684,
+          "estimated_cost_usd": 0.022542,
+          "quality_score": 80,
+          "artifacts": [
+            "/artifacts/1ba84ec0/host_professionalism.png",
+            "/artifacts/1ba84ec0/response_paradox.png",
+            "/artifacts/05b9ec7a/communication_ratings.png",
+            "/artifacts/05b9ec7a/instant_booking_adoption.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 14.335923910140991,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 8640,
+              "output_tokens": 1400,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 69.55310392379761,
+              "tool_calls": 6,
+              "agent_steps": 2,
+              "input_tokens": 38792,
+              "output_tokens": 3502,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 26.281571626663208,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 9061,
+              "output_tokens": 1980,
+              "artifacts": [
+                "/artifacts/1ba84ec0/host_professionalism.png",
+                "/artifacts/1ba84ec0/response_paradox.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 59.508864402770996,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 47052,
+              "output_tokens": 4802,
+              "artifacts": [
+                "/artifacts/05b9ec7a/communication_ratings.png",
+                "/artifacts/05b9ec7a/instant_booking_adoption.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 10,
+          "category": "Availability",
+          "question": "What percentage of listings are instantly bookable in each borough?",
+          "status": "success",
+          "total_time_s": 110.5,
+          "answer_len": 4184,
+          "answer_preview": "**The Bronx leads New York City in instant booking adoption with 33.94% of listings available for immediate reservation, while Brooklyn has the lowest rate at 22.89%.** \n\nThe availability of \"Instant Book\" across NYC is not uniform; rather, it is a strategic tool used by professional property manage",
+          "num_charts": 5,
+          "num_tool_calls": 11,
+          "num_agent_steps": 8,
+          "input_tokens": 158540,
+          "output_tokens": 7904,
+          "estimated_cost_usd": 0.028523,
+          "quality_score": 91,
+          "artifacts": [
+            "/artifacts/7ad99d89/price_dist_ib.png",
+            "/artifacts/7ad99d89/professionalism_vs_ib.png",
+            "/artifacts/fd2959f5/ib_by_room_type.png",
+            "/artifacts/b8c65a11/borough_ib_comparison.png",
+            "/artifacts/b8c65a11/neighborhood_ib_gap.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 6.062326431274414,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3121,
+              "output_tokens": 440,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 45.277775049209595,
+              "tool_calls": 7,
+              "agent_steps": 2,
+              "input_tokens": 131421,
+              "output_tokens": 3028,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 36.263789653778076,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 12942,
+              "output_tokens": 2516,
+              "artifacts": [
+                "/artifacts/7ad99d89/price_dist_ib.png",
+                "/artifacts/7ad99d89/professionalism_vs_ib.png",
+                "/artifacts/fd2959f5/ib_by_room_type.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 22.904457569122314,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11056,
+              "output_tokens": 1920,
+              "artifacts": [
+                "/artifacts/b8c65a11/borough_ib_comparison.png",
+                "/artifacts/b8c65a11/neighborhood_ib_gap.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 11,
+          "category": "Trust",
+          "question": "Are there pricing differences between verified and unverified hosts?",
+          "status": "success",
+          "total_time_s": 121.4,
+          "answer_len": 4578,
+          "answer_preview": "Verified hosts in New York City command a **10.4% median price premium** over unverified hosts, reflecting a market where identity verification has become a professional standard for trust and reliability.\n\n## Verified Hosts Command a \"Trust Premium\" Across Every Borough\nData from over 37,000 listin",
+          "num_charts": 4,
+          "num_tool_calls": 9,
+          "num_agent_steps": 8,
+          "input_tokens": 137323,
+          "output_tokens": 8930,
+          "estimated_cost_usd": 0.025956,
+          "quality_score": 90,
+          "artifacts": [
+            "/artifacts/f4fdb1a4/host_scale_verification.png",
+            "/artifacts/f4fdb1a4/trust_premium_matrix.png",
+            "/artifacts/c7e2a163/borough_verification_premium.png",
+            "/artifacts/c7e2a163/room_type_verification_premium.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 7.928653955459595,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 3474,
+              "output_tokens": 759,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 46.450265884399414,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 107467,
+              "output_tokens": 2605,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 38.96340298652649,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 15585,
+              "output_tokens": 3543,
+              "artifacts": [
+                "/artifacts/f4fdb1a4/host_scale_verification.png",
+                "/artifacts/f4fdb1a4/trust_premium_matrix.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 28.06159782409668,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 10797,
+              "output_tokens": 2023,
+              "artifacts": [
+                "/artifacts/c7e2a163/borough_verification_premium.png",
+                "/artifacts/c7e2a163/room_type_verification_premium.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 12,
+          "category": "Property Types",
+          "question": "What property types have the highest review volume per listing?",
+          "status": "success",
+          "total_time_s": 98.5,
+          "answer_len": 4953,
+          "answer_preview": "Tiny homes and unique experiential properties generate the highest review volume per listing, with tiny homes averaging **146 reviews**\u2014nearly six times the volume of standard rental units.\n\nWhile the \"standard\" Airbnb experience is defined by rental units and private rooms, the highest engagement l",
+          "num_charts": 4,
+          "num_tool_calls": 8,
+          "num_agent_steps": 8,
+          "input_tokens": 133994,
+          "output_tokens": 7795,
+          "estimated_cost_usd": 0.024776,
+          "quality_score": 92,
+          "artifacts": [
+            "/artifacts/cdc61faf/review_distribution.png",
+            "/artifacts/cdc61faf/review_volume_vs_velocity.png",
+            "/artifacts/c0311b8f/engagement_benchmark.png",
+            "/artifacts/c0311b8f/quality_correlation.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 5.101614713668823,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3855,
+              "output_tokens": 427,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 43.29254150390625,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 110946,
+              "output_tokens": 3210,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 24.342800855636597,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 8108,
+              "output_tokens": 2121,
+              "artifacts": [
+                "/artifacts/cdc61faf/review_distribution.png",
+                "/artifacts/cdc61faf/review_volume_vs_velocity.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 25.75156283378601,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11085,
+              "output_tokens": 2037,
+              "artifacts": [
+                "/artifacts/c0311b8f/engagement_benchmark.png",
+                "/artifacts/c0311b8f/quality_correlation.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 13,
+          "category": "Intra-Borough",
+          "question": "How do review scores differ between Manhattan neighbourhoods?",
+          "status": "success",
+          "total_time_s": 123.3,
+          "answer_len": 4497,
+          "answer_preview": "NoHo and the West Village lead Manhattan in guest satisfaction, while high-priced tourist hubs like the Theater District and geographically isolated areas like Roosevelt Island consistently see the lowest review scores.\n\n## NoHo and West Village Set the Gold Standard for Quality\n\nGuest satisfaction ",
+          "num_charts": 5,
+          "num_tool_calls": 12,
+          "num_agent_steps": 8,
+          "input_tokens": 230688,
+          "output_tokens": 9431,
+          "estimated_cost_usd": 0.040262,
+          "quality_score": 90,
+          "artifacts": [
+            "/artifacts/ed8db7bd/manhattan_neighborhood_scores.csv",
+            "/artifacts/d2c5f660/location_vs_value_gap.png",
+            "/artifacts/d2c5f660/review_metrics_heatmap.png",
+            "/artifacts/b14911cd/chart_1.png",
+            "/artifacts/5f1e1496/manhattan_league_table.png",
+            "/artifacts/5f1e1496/superhost_advantage.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 18.48163938522339,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 19548,
+              "output_tokens": 1644,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 40.14458966255188,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 185230,
+              "output_tokens": 2992,
+              "artifacts": [
+                "/artifacts/ed8db7bd/manhattan_neighborhood_scores.csv"
+              ],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 39.099618673324585,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 14243,
+              "output_tokens": 2850,
+              "artifacts": [
+                "/artifacts/d2c5f660/location_vs_value_gap.png",
+                "/artifacts/d2c5f660/review_metrics_heatmap.png",
+                "/artifacts/b14911cd/chart_1.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 25.56916904449463,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11667,
+              "output_tokens": 1945,
+              "artifacts": [
+                "/artifacts/5f1e1496/manhattan_league_table.png",
+                "/artifacts/5f1e1496/superhost_advantage.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 14,
+          "category": "Correlation",
+          "question": "What is the relationship between listing price and number of reviews?",
+          "status": "success",
+          "total_time_s": 133.7,
+          "answer_len": 3964,
+          "answer_preview": "Review volume peaks in the mid-range **$100\u2013$150** price bracket, while the current rate of reviews (velocity) continues to rise with price until hitting a sharp \"luxury ceiling\" at **$500 per night**.\n\n## The $100\u2013$150 \"Sweet Spot\" for Success\nThe relationship between price and review volume is not",
+          "num_charts": 6,
+          "num_tool_calls": 15,
+          "num_agent_steps": 8,
+          "input_tokens": 68626,
+          "output_tokens": 10450,
+          "estimated_cost_usd": 0.016564,
+          "quality_score": 83,
+          "artifacts": [
+            "/artifacts/9263e3f4/price_review_paradox.png",
+            "/artifacts/9263e3f4/stay_length_impact.png",
+            "/artifacts/8e93defa/pro_vs_individual_reviews.png",
+            "/artifacts/8e93defa/value_score_trend.png",
+            "/artifacts/c5fddd42/instant_book_impact.png",
+            "/artifacts/c5fddd42/superstar_distribution.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 24.908475160598755,
+              "tool_calls": 9,
+              "agent_steps": 2,
+              "input_tokens": 18248,
+              "output_tokens": 2337,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 33.91736650466919,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 23610,
+              "output_tokens": 2868,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 40.821537017822266,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 14854,
+              "output_tokens": 3254,
+              "artifacts": [
+                "/artifacts/9263e3f4/price_review_paradox.png",
+                "/artifacts/9263e3f4/stay_length_impact.png",
+                "/artifacts/8e93defa/pro_vs_individual_reviews.png",
+                "/artifacts/8e93defa/value_score_trend.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 34.03830862045288,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 11914,
+              "output_tokens": 1991,
+              "artifacts": [
+                "/artifacts/c5fddd42/instant_book_impact.png",
+                "/artifacts/c5fddd42/superstar_distribution.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 15,
+          "category": "Market",
+          "question": "Which hosts have the most listings across NYC?",
+          "status": "success",
+          "total_time_s": 121.3,
+          "answer_len": 4416,
+          "answer_preview": "**Blueground** is the most prominent host in New York City, managing a massive portfolio of **391 listings** primarily focused on high-end Manhattan apartments.\n\n## The Dominance of Professional Operators\nThe New York City hosting landscape has shifted significantly from individual \"spare room\" rent",
+          "num_charts": 4,
+          "num_tool_calls": 10,
+          "num_agent_steps": 8,
+          "input_tokens": 171342,
+          "output_tokens": 10462,
+          "estimated_cost_usd": 0.031978,
+          "quality_score": 90,
+          "artifacts": [
+            "/artifacts/66665355/host_borough_breakdown.png",
+            "/artifacts/66665355/host_positioning_scatter.png",
+            "/artifacts/e68e8a23/engagement_gap.png",
+            "/artifacts/e68e8a23/top_hosts_volume.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 6.06415057182312,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3222,
               "output_tokens": 502,
               "artifacts": [],
               "error": null
             },
             {
               "name": "EDA Analyst",
-              "time_s": 12.373384475708008,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 5095,
-              "output_tokens": 1522,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 10.831679344177246,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 2356,
-              "output_tokens": 1124,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 34.072532415390015,
-              "tool_calls": 1,
-              "agent_steps": 3,
-              "input_tokens": 9348,
-              "output_tokens": 1970,
-              "artifacts": [
-                "/artifacts/0748ed89/average_price_by_room_type_and_borough.png",
-                "/artifacts/0748ed89/chart_2.png"
-              ],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "success",
-          "total_time_s": 79.5,
-          "answer_len": 3093,
-          "answer_preview": "## Superhosts Consistently Outperform Regular Hosts in Guest Reviews\n\nSuperhosts consistently achieve higher average review scores than regular hosts, with an average rating of **4.85** compared to **4.55**. This represents a noticeable difference of **0.30** points, clearly indicating a higher leve",
-          "num_charts": 13,
-          "num_tool_calls": 10,
-          "num_agent_steps": 13,
-          "input_tokens": 50803,
-          "output_tokens": 8447,
-          "estimated_cost_usd": 0.012689,
-          "quality_score": 96,
-          "artifacts": [
-            "/artifacts/1f556db3/avg_review_score_by_room_type.png",
-            "/artifacts/1f556db3/review_score_distribution.png",
-            "/artifacts/6e0f5479/avg_review_score_by_neigh_group.png",
-            "/artifacts/6e0f5479/avg_review_score_by_room_type.png",
-            "/artifacts/6e0f5479/review_score_distribution.png",
-            "/artifacts/a6e74507/avg_review_scores_comparison.png",
-            "/artifacts/a6e74507/chart_2.png",
-            "/artifacts/34bb8324/avg_review_score_by_room_type_comparison.png",
-            "/artifacts/34bb8324/chart_2.png",
-            "/artifacts/bd978795/avg_review_score_by_borough_comparison.png",
-            "/artifacts/bd978795/chart_2.png",
-            "/artifacts/47149151/avg_review_scores_comparison.png",
-            "/artifacts/47149151/chart_2.png"
-          ],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 2.772212266921997,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 2982,
-              "output_tokens": 104,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 3.957130193710327,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 3177,
-              "output_tokens": 403,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 39.375303983688354,
-              "tool_calls": 4,
-              "agent_steps": 3,
-              "input_tokens": 23330,
-              "output_tokens": 4875,
-              "artifacts": [
-                "/artifacts/1f556db3/avg_review_score_by_room_type.png",
-                "/artifacts/1f556db3/review_score_distribution.png",
-                "/artifacts/6e0f5479/avg_review_score_by_neigh_group.png",
-                "/artifacts/6e0f5479/avg_review_score_by_room_type.png",
-                "/artifacts/6e0f5479/review_score_distribution.png"
-              ],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 33.4068443775177,
-              "tool_calls": 4,
-              "agent_steps": 6,
-              "input_tokens": 21314,
-              "output_tokens": 3065,
-              "artifacts": [
-                "/artifacts/a6e74507/avg_review_scores_comparison.png",
-                "/artifacts/a6e74507/chart_2.png",
-                "/artifacts/34bb8324/avg_review_score_by_room_type_comparison.png",
-                "/artifacts/34bb8324/chart_2.png",
-                "/artifacts/bd978795/avg_review_score_by_borough_comparison.png",
-                "/artifacts/bd978795/chart_2.png",
-                "/artifacts/47149151/avg_review_scores_comparison.png",
-                "/artifacts/47149151/chart_2.png"
-              ],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
-          "status": "success",
-          "total_time_s": 41.7,
-          "answer_len": 171,
-          "answer_preview": "Host sign-up activity in NYC has shown a clear trajectory of rapid initial expansion, peaking in 2015, followed by a general decline and fluctuation in subsequent years.\n\n",
-          "num_charts": 0,
-          "num_tool_calls": 2,
-          "num_agent_steps": 8,
-          "input_tokens": 15563,
-          "output_tokens": 3067,
-          "estimated_cost_usd": 0.004175,
-          "quality_score": 51,
-          "artifacts": [],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 3.9032466411590576,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 3167,
-              "output_tokens": 430,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 14.25739049911499,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 6265,
-              "output_tokens": 2112,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 16.838355779647827,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 2584,
-              "output_tokens": 488,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 6.706843614578247,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 3547,
-              "output_tokens": 37,
-              "artifacts": [],
-              "error": null
-            }
-          ],
-          "error": null
-        }
-      ],
-      "summary": {
-        "success_rate": 1.0,
-        "avg_time_s": 61.2,
-        "avg_score": 78.3,
-        "avg_charts": 5.0,
-        "total_cost_usd": 0.023191,
-        "total_input_tokens": 88074,
-        "total_output_tokens": 16632
-      }
-    },
-    {
-      "model_id": "google/gemini-2.0-flash",
-      "display_name": "Gemini 2.0 Flash",
-      "provider": "vertex",
-      "results": [
-        {
-          "question_id": 1,
-          "category": "Pricing",
-          "question": "How does pricing vary by room type across the five boroughs?",
-          "status": "success",
-          "total_time_s": 55.1,
-          "answer_len": 2337,
-          "answer_preview": "## Manhattan Leads in Pricing for All Room Types\n\nAs the chart illustrates, Manhattan consistently exhibits the highest average prices across all room types. For example, the average price for an entire home/apartment in Manhattan is **\\$249**, significantly higher than in other boroughs like Brookl",
-          "num_charts": 6,
-          "num_tool_calls": 11,
-          "num_agent_steps": 17,
-          "input_tokens": 51191,
-          "output_tokens": 6000,
-          "estimated_cost_usd": 0.007519,
-          "quality_score": 97,
-          "artifacts": [
-            "/artifacts/00072b19/chart_2.png",
-            "/artifacts/00072b19/median_price_by_borough_room_type.png",
-            "/artifacts/c0da2629/chart_2.png",
-            "/artifacts/c0da2629/listing_counts_by_borough_room_type.png",
-            "/artifacts/a579adaa/average_price_by_borough_room_type.png",
-            "/artifacts/a579adaa/chart_2.png"
-          ],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 1.017423391342163,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 1440,
-              "output_tokens": 86,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 16.821748733520508,
-              "tool_calls": 4,
-              "agent_steps": 4,
-              "input_tokens": 15507,
-              "output_tokens": 2364,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 26.0399489402771,
-              "tool_calls": 6,
-              "agent_steps": 8,
-              "input_tokens": 28323,
-              "output_tokens": 2230,
-              "artifacts": [
-                "/artifacts/00072b19/chart_2.png",
-                "/artifacts/00072b19/median_price_by_borough_room_type.png",
-                "/artifacts/c0da2629/chart_2.png",
-                "/artifacts/c0da2629/listing_counts_by_borough_room_type.png"
-              ],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 11.217624425888062,
-              "tool_calls": 1,
-              "agent_steps": 3,
-              "input_tokens": 5921,
-              "output_tokens": 1320,
-              "artifacts": [
-                "/artifacts/a579adaa/average_price_by_borough_room_type.png",
-                "/artifacts/a579adaa/chart_2.png"
-              ],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "success",
-          "total_time_s": 18.0,
-          "answer_len": 1635,
-          "answer_preview": "Superhosts in NYC Airbnb listings do receive higher review scores compared to regular hosts. The data suggests a correlation between being a superhost and receiving better reviews.\n\n## Superhosts Generally Receive Higher Review Scores\n\nThe analysis shows that superhosts have a higher average review ",
-          "num_charts": 0,
-          "num_tool_calls": 1,
-          "num_agent_steps": 9,
-          "input_tokens": 10033,
-          "output_tokens": 2683,
-          "estimated_cost_usd": 0.002077,
-          "quality_score": 67,
-          "artifacts": [],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 0.887108564376831,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 1439,
-              "output_tokens": 59,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 2.790133476257324,
-              "tool_calls": 1,
-              "agent_steps": 3,
-              "input_tokens": 3214,
-              "output_tokens": 280,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 11.88297724723816,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 1432,
-              "output_tokens": 2041,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 2.421234130859375,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 3948,
-              "output_tokens": 303,
-              "artifacts": [],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
-          "status": "success",
-          "total_time_s": 60.0,
-          "answer_len": 2966,
-          "answer_preview": "Host sign-up activity in NYC experienced a boom in the early to mid-2010s, followed by a decline in recent years. This trend likely reflects a combination of market forces and regulatory changes affecting Airbnb in New York City.\n\n## Rapid Growth in the Early 2010s\n\nFrom 2010, there was a surge in n",
-          "num_charts": 0,
-          "num_tool_calls": 7,
-          "num_agent_steps": 14,
-          "input_tokens": 54849,
-          "output_tokens": 7554,
-          "estimated_cost_usd": 0.008507,
-          "quality_score": 72,
-          "artifacts": [],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 0.7287840843200684,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 1440,
-              "output_tokens": 57,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 4.485095024108887,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 1457,
-              "output_tokens": 33,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 50.53301119804382,
-              "tool_calls": 7,
-              "agent_steps": 8,
-              "input_tokens": 49584,
-              "output_tokens": 6875,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 4.203106641769409,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 2368,
-              "output_tokens": 589,
-              "artifacts": [],
-              "error": null
-            }
-          ],
-          "error": null
-        }
-      ],
-      "summary": {
-        "success_rate": 1.0,
-        "avg_time_s": 44.4,
-        "avg_score": 78.7,
-        "avg_charts": 2.0,
-        "total_cost_usd": 0.018103,
-        "total_input_tokens": 116073,
-        "total_output_tokens": 16237
-      }
-    },
-    {
-      "model_id": "openai/gpt-4.1",
-      "display_name": "GPT-4.1",
-      "provider": "openrouter",
-      "results": [
-        {
-          "question_id": 1,
-          "category": "Pricing",
-          "question": "How does pricing vary by room type across the five boroughs?",
-          "status": "success",
-          "total_time_s": 75.6,
-          "answer_len": 3500,
-          "answer_preview": "Manhattan commands the highest Airbnb prices across all room types, while the Bronx and Staten Island remain the most affordable. Room type also plays a major role: \u201cEntire home/apt\u201d and \u201cHotel room\u201d bookings consistently cost more, no matter the borough.\n\n## Manhattan Dominates Airbnb Pricing at Ev",
-          "num_charts": 13,
-          "num_tool_calls": 7,
-          "num_agent_steps": 8,
-          "input_tokens": 24778,
-          "output_tokens": 5357,
-          "estimated_cost_usd": 0.092412,
-          "quality_score": 97,
-          "artifacts": [
-            "/artifacts/6b824b63/chart_2.png",
-            "/artifacts/6b824b63/chart_3.png",
-            "/artifacts/6b824b63/chart_4.png",
-            "/artifacts/6b824b63/median_price_heatmap.png",
-            "/artifacts/216d1d10/chart_2.png",
-            "/artifacts/216d1d10/chart_3.png",
-            "/artifacts/216d1d10/chart_4.png",
-            "/artifacts/216d1d10/price_boxplot_by_borough_roomtype.png",
-            "/artifacts/24469a07/chart_2.png",
-            "/artifacts/24469a07/chart_3.png",
-            "/artifacts/24469a07/chart_4.png",
-            "/artifacts/24469a07/roomtype_borough_bar.png",
-            "/artifacts/d13110e9/avg_price_by_roomtype_borough.png"
-          ],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 6.772528886795044,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 5402,
-              "output_tokens": 545,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 19.1886465549469,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 4745,
-              "output_tokens": 1867,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 21.306450843811035,
-              "tool_calls": 3,
-              "agent_steps": 2,
-              "input_tokens": 6198,
-              "output_tokens": 1629,
-              "artifacts": [
-                "/artifacts/6b824b63/chart_2.png",
-                "/artifacts/6b824b63/chart_3.png",
-                "/artifacts/6b824b63/chart_4.png",
-                "/artifacts/6b824b63/median_price_heatmap.png",
-                "/artifacts/216d1d10/chart_2.png",
-                "/artifacts/216d1d10/chart_3.png",
-                "/artifacts/216d1d10/chart_4.png",
-                "/artifacts/216d1d10/price_boxplot_by_borough_roomtype.png",
-                "/artifacts/24469a07/chart_2.png",
-                "/artifacts/24469a07/chart_3.png",
-                "/artifacts/24469a07/chart_4.png",
-                "/artifacts/24469a07/roomtype_borough_bar.png"
-              ],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 28.34264826774597,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 8433,
-              "output_tokens": 1316,
-              "artifacts": [
-                "/artifacts/d13110e9/avg_price_by_roomtype_borough.png"
-              ],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "success",
-          "total_time_s": 43.8,
-          "answer_len": 2781,
-          "answer_preview": "Superhosts consistently achieve higher review scores than regular hosts \u2014 both overall and across every aspect of the guest experience.\n\n## Superhosts Lead in Every Review Category\n\nOn average, superhosts score **4.85** out of 5 stars overall, compared to just **4.55** for non-superhosts. This advan",
-          "num_charts": 3,
-          "num_tool_calls": 6,
-          "num_agent_steps": 8,
-          "input_tokens": 20047,
-          "output_tokens": 4621,
-          "estimated_cost_usd": 0.077062,
-          "quality_score": 97,
-          "artifacts": [
-            "/artifacts/1005649f/borough_superhost_review_scores.png",
-            "/artifacts/1005649f/chart_2.png",
-            "/artifacts/f951eb7a/superhost_vs_non_review_subcategories.png"
-          ],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 6.612901449203491,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 3178,
-              "output_tokens": 668,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 5.921482801437378,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 1764,
-              "output_tokens": 831,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 17.942323684692383,
-              "tool_calls": 3,
-              "agent_steps": 2,
-              "input_tokens": 6681,
-              "output_tokens": 1862,
-              "artifacts": [
-                "/artifacts/1005649f/borough_superhost_review_scores.png",
-                "/artifacts/1005649f/chart_2.png"
-              ],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 13.29171347618103,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 8424,
-              "output_tokens": 1260,
-              "artifacts": [
-                "/artifacts/f951eb7a/superhost_vs_non_review_subcategories.png"
-              ],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
-          "status": "success",
-          "total_time_s": 70.8,
-          "answer_len": 2670,
-          "answer_preview": "NYC Airbnb host sign-up activity soared from 2008, peaking with 3,801 new hosts in 2015, but has since crashed\u2014dropping to just 526 in 2022, an 86% decline from the high point.\n\n## Host Sign-Ups Surged, Then Plummeted After 2015\nHost sign-up numbers started small, with only 10 hosts in 2008 and stea",
-          "num_charts": 7,
-          "num_tool_calls": 11,
-          "num_agent_steps": 9,
-          "input_tokens": 34784,
-          "output_tokens": 6098,
-          "estimated_cost_usd": 0.118352,
-          "quality_score": 97,
-          "artifacts": [
-            "/artifacts/9fc31605/chart_2.png",
-            "/artifacts/9fc31605/host_signups_by_year.png",
-            "/artifacts/a38c5bc9/avg_listings_per_new_host_by_year.png",
-            "/artifacts/a38c5bc9/chart_2.png",
-            "/artifacts/5e87b1e3/chart_2.png",
-            "/artifacts/5e87b1e3/host_signups_by_year_borough.png",
-            "/artifacts/f6b476b5/host_signup_trend_annotated.png"
-          ],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 4.137027978897095,
-              "tool_calls": 1,
-              "agent_steps": 2,
-              "input_tokens": 2898,
-              "output_tokens": 319,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 25.586353540420532,
+              "time_s": 45.45169925689697,
               "tool_calls": 5,
-              "agent_steps": 3,
-              "input_tokens": 14848,
-              "output_tokens": 2379,
+              "agent_steps": 2,
+              "input_tokens": 136603,
+              "output_tokens": 3461,
               "artifacts": [],
               "error": null
             },
             {
               "name": "Hypothesis Generator",
-              "time_s": 22.557152032852173,
-              "tool_calls": 4,
+              "time_s": 41.33832931518555,
+              "tool_calls": 2,
               "agent_steps": 2,
-              "input_tokens": 9066,
-              "output_tokens": 2046,
+              "input_tokens": 14357,
+              "output_tokens": 3710,
               "artifacts": [
-                "/artifacts/9fc31605/chart_2.png",
-                "/artifacts/9fc31605/host_signups_by_year.png",
-                "/artifacts/a38c5bc9/avg_listings_per_new_host_by_year.png",
-                "/artifacts/a38c5bc9/chart_2.png",
-                "/artifacts/5e87b1e3/chart_2.png",
-                "/artifacts/5e87b1e3/host_signups_by_year_borough.png"
+                "/artifacts/66665355/host_borough_breakdown.png",
+                "/artifacts/66665355/host_positioning_scatter.png"
               ],
               "error": null
             },
             {
               "name": "Presenter",
-              "time_s": 18.48606252670288,
-              "tool_calls": 1,
+              "time_s": 28.47303581237793,
+              "tool_calls": 2,
               "agent_steps": 2,
-              "input_tokens": 7972,
-              "output_tokens": 1354,
+              "input_tokens": 17160,
+              "output_tokens": 2789,
               "artifacts": [
-                "/artifacts/f6b476b5/host_signup_trend_annotated.png"
+                "/artifacts/e68e8a23/engagement_gap.png",
+                "/artifacts/e68e8a23/top_hosts_volume.png"
               ],
               "error": null
             }
           ],
           "error": null
-        }
-      ],
-      "summary": {
-        "success_rate": 1.0,
-        "avg_time_s": 63.4,
-        "avg_score": 97.0,
-        "avg_charts": 7.7,
-        "total_cost_usd": 0.287826,
-        "total_input_tokens": 79609,
-        "total_output_tokens": 16076
-      }
-    },
-    {
-      "model_id": "openai/gpt-4.1-nano",
-      "display_name": "GPT-4.1 Nano",
-      "provider": "openrouter",
-      "results": [
+        },
         {
-          "question_id": 1,
-          "category": "Pricing",
-          "question": "How does pricing vary by room type across the five boroughs?",
+          "question_id": 16,
+          "category": "Features",
+          "question": "How do accommodation capacity and bedrooms relate to price?",
           "status": "success",
-          "total_time_s": 24.0,
-          "answer_len": 2759,
-          "answer_preview": "The analysis shows that pricing varies significantly across boroughs and room types, with Manhattan consistently commanding higher prices, especially for entire homes or apartments. This pattern indicates a differentiated market where Manhattan\u2019s real estate market is positioned at the premium end, ",
-          "num_charts": 0,
-          "num_tool_calls": 12,
+          "total_time_s": 137.8,
+          "answer_len": 4297,
+          "answer_preview": "Adding bedrooms is the single most powerful driver of listing value in the NYC Airbnb market, outperforming guest capacity alone. While increasing the number of guests allowed consistently raises the total price, the **\"Privacy Surcharge\"**\u2014the premium charged for separate physical bedrooms\u2014is what ",
+          "num_charts": 5,
+          "num_tool_calls": 14,
           "num_agent_steps": 8,
-          "input_tokens": 36573,
-          "output_tokens": 2249,
-          "estimated_cost_usd": 0.004557,
-          "quality_score": 74,
-          "artifacts": [],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 6.132205247879028,
-              "tool_calls": 4,
-              "agent_steps": 2,
-              "input_tokens": 22612,
-              "output_tokens": 248,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 6.272330284118652,
-              "tool_calls": 4,
-              "agent_steps": 2,
-              "input_tokens": 6075,
-              "output_tokens": 490,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 4.057055711746216,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 3482,
-              "output_tokens": 567,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 7.579739809036255,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 4404,
-              "output_tokens": 944,
-              "artifacts": [],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "success",
-          "total_time_s": 29.2,
-          "answer_len": 1737,
-          "answer_preview": "Superhosts tend to receive higher review scores than regular hosts, indicating a consistent pattern of better hosting quality. The analysis shows that the median review score for superhosts is noticeably higher, and they generally maintain a narrower range of scores, reflecting more reliable positiv",
-          "num_charts": 0,
-          "num_tool_calls": 11,
-          "num_agent_steps": 12,
-          "input_tokens": 24313,
-          "output_tokens": 3367,
-          "estimated_cost_usd": 0.003778,
-          "quality_score": 73,
-          "artifacts": [],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 2.9706292152404785,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 2770,
-              "output_tokens": 132,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 6.1671226024627686,
-              "tool_calls": 2,
-              "agent_steps": 3,
-              "input_tokens": 4881,
-              "output_tokens": 629,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 15.190155982971191,
-              "tool_calls": 5,
-              "agent_steps": 5,
-              "input_tokens": 11702,
-              "output_tokens": 1959,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 4.912927865982056,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 4960,
-              "output_tokens": 647,
-              "artifacts": [],
-              "error": null
-            }
-          ],
-          "error": null
-        },
-        {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
-          "status": "success",
-          "total_time_s": 19.1,
-          "answer_len": 1585,
-          "answer_preview": "Host sign-up activity on Airbnb has experienced significant fluctuations since the platform's inception. The earliest recorded sign-up was in August 2008, just after Airbnb was founded, indicating an initial burst of early adoption. Based on the trend data typically associated with such growth patte",
-          "num_charts": 0,
-          "num_tool_calls": 8,
-          "num_agent_steps": 10,
-          "input_tokens": 18352,
-          "output_tokens": 2422,
-          "estimated_cost_usd": 0.002804,
-          "quality_score": 74,
-          "artifacts": [],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 2.4688727855682373,
-              "tool_calls": 2,
-              "agent_steps": 2,
-              "input_tokens": 2910,
-              "output_tokens": 190,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 4.835277318954468,
-              "tool_calls": 3,
-              "agent_steps": 2,
-              "input_tokens": 4660,
-              "output_tokens": 580,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 9.145394325256348,
-              "tool_calls": 3,
-              "agent_steps": 4,
-              "input_tokens": 8492,
-              "output_tokens": 1356,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "Presenter",
-              "time_s": 2.6537344455718994,
-              "tool_calls": 0,
-              "agent_steps": 2,
-              "input_tokens": 2290,
-              "output_tokens": 296,
-              "artifacts": [],
-              "error": null
-            }
-          ],
-          "error": null
-        }
-      ],
-      "summary": {
-        "success_rate": 1.0,
-        "avg_time_s": 24.1,
-        "avg_score": 73.7,
-        "avg_charts": 0.0,
-        "total_cost_usd": 0.011139,
-        "total_input_tokens": 79238,
-        "total_output_tokens": 8038
-      }
-    },
-    {
-      "model_id": "anthropic/claude-sonnet-4-6",
-      "display_name": "Claude Sonnet 4.6",
-      "provider": "openrouter",
-      "results": [
-        {
-          "question_id": 1,
-          "category": "Pricing",
-          "question": "How does pricing vary by room type across the five boroughs?",
-          "status": "timeout",
-          "total_time_s": 201.9,
-          "answer_len": 0,
-          "answer_preview": "",
-          "num_charts": 0,
-          "num_tool_calls": 0,
-          "num_agent_steps": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
-          "estimated_cost_usd": 0.0,
-          "quality_score": 7,
-          "artifacts": [],
-          "stages": [],
-          "error": "Pipeline timed out after 420s"
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "success",
-          "total_time_s": 374.1,
-          "answer_len": 4337,
-          "answer_preview": "**Yes \u2014 superhosts consistently earn better review scores than regular hosts, and the gap holds across every sub-score, every borough, and every room type without a single exception.**\n\n---\n\n## The Gap Is Structural, Not Incidental\n\nSuperhosts average **4.85** overall versus **4.55** for regular hos",
-          "num_charts": 8,
-          "num_tool_calls": 25,
-          "num_agent_steps": 13,
-          "input_tokens": 80480,
-          "output_tokens": 12684,
-          "estimated_cost_usd": 0.4317,
-          "quality_score": 78,
+          "input_tokens": 147533,
+          "output_tokens": 10475,
+          "estimated_cost_usd": 0.028415,
+          "quality_score": 82,
           "artifacts": [
-            "/artifacts/a5613add/superhost_score_comparison.png",
-            "/artifacts/e0de6c89/rating_distribution.png",
-            "/artifacts/322cace9/rating_distribution.png",
-            "/artifacts/248bafec/borough_rating_comparison.png",
-            "/artifacts/a90ea98a/radar_subscores.png",
-            "/artifacts/39f5bc89/rating_tier_pies.png",
-            "/artifacts/35558dcf/dumbbell_subscores.png",
-            "/artifacts/c3b592a0/borough_and_share.png"
+            "/artifacts/d708db59/price_per_guest_trends.png",
+            "/artifacts/d708db59/privacy_premium_4guests.png",
+            "/artifacts/9ab0a488/studio_vs_1br_borough.png",
+            "/artifacts/0468162b/bedroom_median_bars.png",
+            "/artifacts/0468162b/privacy_heatmap.png"
           ],
           "stages": [
             {
               "name": "Data Collector",
-              "time_s": 21.333616971969604,
-              "tool_calls": 4,
-              "agent_steps": 3,
-              "input_tokens": 8439,
-              "output_tokens": 1565,
+              "time_s": 9.565648794174194,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 4136,
+              "output_tokens": 994,
               "artifacts": [],
               "error": null
             },
             {
               "name": "EDA Analyst",
-              "time_s": 174.04957842826843,
-              "tool_calls": 11,
-              "agent_steps": 4,
-              "input_tokens": 0,
-              "output_tokens": 0,
+              "time_s": 47.32791566848755,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 96504,
+              "output_tokens": 3833,
               "artifacts": [],
-              "error": "Max turns (10) exceeded"
+              "error": null
             },
             {
               "name": "Hypothesis Generator",
-              "time_s": 113.42169141769409,
-              "tool_calls": 8,
-              "agent_steps": 4,
-              "input_tokens": 54175,
-              "output_tokens": 7406,
+              "time_s": 39.03114366531372,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 13758,
+              "output_tokens": 2425,
               "artifacts": [
-                "/artifacts/a5613add/superhost_score_comparison.png",
-                "/artifacts/e0de6c89/rating_distribution.png",
-                "/artifacts/322cace9/rating_distribution.png",
-                "/artifacts/248bafec/borough_rating_comparison.png",
-                "/artifacts/a90ea98a/radar_subscores.png",
-                "/artifacts/39f5bc89/rating_tier_pies.png"
+                "/artifacts/d708db59/price_per_guest_trends.png",
+                "/artifacts/d708db59/privacy_premium_4guests.png",
+                "/artifacts/9ab0a488/studio_vs_1br_borough.png"
               ],
               "error": null
             },
             {
               "name": "Presenter",
-              "time_s": 65.24850368499756,
-              "tool_calls": 2,
+              "time_s": 41.82544684410095,
+              "tool_calls": 4,
               "agent_steps": 2,
-              "input_tokens": 17866,
-              "output_tokens": 3713,
+              "input_tokens": 33135,
+              "output_tokens": 3223,
               "artifacts": [
-                "/artifacts/35558dcf/dumbbell_subscores.png",
-                "/artifacts/c3b592a0/borough_and_share.png"
+                "/artifacts/0468162b/bedroom_median_bars.png",
+                "/artifacts/0468162b/privacy_heatmap.png"
               ],
               "error": null
             }
           ],
-          "error": "EDA Analyst: Max turns (10) exceeded; "
+          "error": null
         },
         {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
+          "question_id": 17,
+          "category": "Quality Gap",
+          "question": "What share of listings in each borough have no reviews?",
           "status": "success",
-          "total_time_s": 321.4,
-          "answer_len": 4392,
-          "answer_preview": "NYC Airbnb host sign-ups followed a dramatic arc \u2014 explosive growth through 2015, a structural regulatory-driven decline, and a COVID collapse that the platform has not come close to recovering from.\n\n## The Platform Grew 380\u00d7 in Seven Years, Then Reversed\n\nFrom just **10 hosts in 2008**, NYC Airbnb",
+          "total_time_s": 172.7,
+          "answer_len": 5155,
+          "answer_preview": "Manhattan and Queens lead New York City with the highest percentage of unreviewed listings, with **24.3%** and **21.2%** of their respective markets showing zero review history. This represents a significant portion of \"ghost\" inventory driven by regulatory shifts and professional hosting strategies",
           "num_charts": 6,
-          "num_tool_calls": 21,
-          "num_agent_steps": 10,
-          "input_tokens": 62276,
-          "output_tokens": 11155,
-          "estimated_cost_usd": 0.354153,
+          "num_tool_calls": 15,
+          "num_agent_steps": 8,
+          "input_tokens": 96027,
+          "output_tokens": 13973,
+          "estimated_cost_usd": 0.022788,
           "quality_score": 80,
           "artifacts": [
-            "/artifacts/1fcca205/01_annual_signups_yoy.png",
-            "/artifacts/20a6f772/02_borough_stacked_area.png",
-            "/artifacts/57122975/03_monthly_heatmap.png",
-            "/artifacts/07a9252e/04_cumulative_and_borough_share.png",
-            "/artifacts/1b211660/host_signups_phases.png",
-            "/artifacts/f0765ea6/borough_share_over_time.png"
+            "/artifacts/65ea1dfa/host_portfolio_analysis.png",
+            "/artifacts/65ea1dfa/regulatory_impact.png",
+            "/artifacts/53c8c2ef/host_portfolio_analysis.png",
+            "/artifacts/53c8c2ef/regulatory_impact.png",
+            "/artifacts/6b46405d/borough_share_no_reviews.png",
+            "/artifacts/6b46405d/price_gap_analysis.png"
           ],
           "stages": [
             {
               "name": "Data Collector",
-              "time_s": 21.577254056930542,
-              "tool_calls": 4,
-              "agent_steps": 3,
-              "input_tokens": 11978,
-              "output_tokens": 1219,
+              "time_s": 6.048832178115845,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 3135,
+              "output_tokens": 479,
               "artifacts": [],
               "error": null
             },
             {
               "name": "EDA Analyst",
-              "time_s": 129.88451671600342,
-              "tool_calls": 10,
+              "time_s": 45.06482195854187,
+              "tool_calls": 6,
               "agent_steps": 2,
-              "input_tokens": 0,
-              "output_tokens": 0,
+              "input_tokens": 24621,
+              "output_tokens": 2524,
               "artifacts": [],
-              "error": "Max turns (10) exceeded"
+              "error": null
             },
             {
               "name": "Hypothesis Generator",
-              "time_s": 104.20039415359497,
-              "tool_calls": 5,
-              "agent_steps": 3,
-              "input_tokens": 32795,
-              "output_tokens": 6275,
+              "time_s": 58.68583035469055,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 21418,
+              "output_tokens": 4546,
               "artifacts": [
-                "/artifacts/1fcca205/01_annual_signups_yoy.png",
-                "/artifacts/20a6f772/02_borough_stacked_area.png",
-                "/artifacts/57122975/03_monthly_heatmap.png",
-                "/artifacts/07a9252e/04_cumulative_and_borough_share.png"
+                "/artifacts/65ea1dfa/host_portfolio_analysis.png",
+                "/artifacts/65ea1dfa/regulatory_impact.png",
+                "/artifacts/53c8c2ef/host_portfolio_analysis.png",
+                "/artifacts/53c8c2ef/regulatory_impact.png"
               ],
               "error": null
             },
             {
               "name": "Presenter",
-              "time_s": 65.69234132766724,
+              "time_s": 62.92834830284119,
+              "tool_calls": 5,
+              "agent_steps": 2,
+              "input_tokens": 46853,
+              "output_tokens": 6424,
+              "artifacts": [
+                "/artifacts/6b46405d/borough_share_no_reviews.png",
+                "/artifacts/6b46405d/price_gap_analysis.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 18,
+          "category": "Seasonal",
+          "question": "How does review activity look month by month over time?",
+          "status": "success",
+          "total_time_s": 111.3,
+          "answer_len": 4157,
+          "answer_preview": "Review activity in New York City reached a historic high of **32,215 reviews** in May 2022, signaling a full and robust recovery that surpassed pre-pandemic levels by **74%**. This remarkable rebound followed a devastating **91% decline** in activity during the onset of the COVID-19 pandemic in earl",
+          "num_charts": 4,
+          "num_tool_calls": 11,
+          "num_agent_steps": 8,
+          "input_tokens": 139587,
+          "output_tokens": 9223,
+          "estimated_cost_usd": 0.026472,
+          "quality_score": 91,
+          "artifacts": [
+            "/artifacts/8ed69942/borough_review_stats.csv",
+            "/artifacts/8ed69942/monthly_review_stats.csv",
+            "/artifacts/16b5070e/borough_share_shift.png",
+            "/artifacts/16b5070e/review_timeline.png",
+            "/artifacts/5419b30f/room_type_growth.png",
+            "/artifacts/5419b30f/seasonal_performance.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 11.553362607955933,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 22642,
+              "output_tokens": 854,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 30.568650245666504,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 83127,
+              "output_tokens": 2213,
+              "artifacts": [
+                "/artifacts/8ed69942/borough_review_stats.csv",
+                "/artifacts/8ed69942/monthly_review_stats.csv"
+              ],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 38.113927364349365,
               "tool_calls": 2,
               "agent_steps": 2,
-              "input_tokens": 17503,
-              "output_tokens": 3661,
+              "input_tokens": 14780,
+              "output_tokens": 2882,
               "artifacts": [
-                "/artifacts/1b211660/host_signups_phases.png",
-                "/artifacts/f0765ea6/borough_share_over_time.png"
-              ],
-              "error": null
-            }
-          ],
-          "error": "EDA Analyst: Max turns (10) exceeded; "
-        }
-      ],
-      "summary": {
-        "success_rate": 0.6666666666666666,
-        "avg_time_s": 347.8,
-        "avg_score": 79.0,
-        "avg_charts": 7.0,
-        "total_cost_usd": 0.785853,
-        "total_input_tokens": 142756,
-        "total_output_tokens": 23839
-      }
-    },
-    {
-      "model_id": "anthropic/claude-opus-4-6",
-      "display_name": "Claude Opus 4.6",
-      "provider": "openrouter",
-      "results": [
-        {
-          "question_id": 1,
-          "category": "Pricing",
-          "question": "How does pricing vary by room type across the five boroughs?",
-          "status": "timeout",
-          "total_time_s": 202.3,
-          "answer_len": 0,
-          "answer_preview": "",
-          "num_charts": 0,
-          "num_tool_calls": 0,
-          "num_agent_steps": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
-          "estimated_cost_usd": 0.0,
-          "quality_score": 7,
-          "artifacts": [],
-          "stages": [],
-          "error": "Pipeline timed out after 420s"
-        },
-        {
-          "question_id": 2,
-          "category": "Host Quality",
-          "question": "Do superhosts get better review scores than regular hosts?",
-          "status": "success",
-          "total_time_s": 392.7,
-          "answer_len": 4301,
-          "answer_preview": "**Yes \u2014 and it's not even close.** Superhosts score higher than regular hosts on **every single review metric**, in **every NYC borough**, and across **every room type**. The average overall rating for superhosts is **4.85** compared to **4.55** for regular hosts, a meaningful **+0.30 gap** on a 5-p",
-          "num_charts": 7,
-          "num_tool_calls": 23,
-          "num_agent_steps": 18,
-          "input_tokens": 87959,
-          "output_tokens": 18744,
-          "estimated_cost_usd": 2.725185,
-          "quality_score": 78,
-          "artifacts": [
-            "/artifacts/fe212176/superhost_scores_comparison.png",
-            "/artifacts/fd6cdc42/superhost_rating_distribution.png",
-            "/artifacts/bc4a933d/superhost_borough_roomtype.png",
-            "/artifacts/9968fe5b/superhost_deep_dive.png",
-            "/artifacts/0e6f1a7e/score_comparison_polished.png",
-            "/artifacts/d44aa78b/distribution_and_gaps.png",
-            "/artifacts/451a342b/superhost_value_story.png"
-          ],
-          "stages": [
-            {
-              "name": "Data Collector",
-              "time_s": 19.690810441970825,
-              "tool_calls": 4,
-              "agent_steps": 3,
-              "input_tokens": 6661,
-              "output_tokens": 1446,
-              "artifacts": [],
-              "error": null
-            },
-            {
-              "name": "EDA Analyst",
-              "time_s": 123.2801604270935,
-              "tool_calls": 10,
-              "agent_steps": 4,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "artifacts": [],
-              "error": "Max turns (10) exceeded"
-            },
-            {
-              "name": "Hypothesis Generator",
-              "time_s": 158.9663667678833,
-              "tool_calls": 6,
-              "agent_steps": 8,
-              "input_tokens": 54212,
-              "output_tokens": 11821,
-              "artifacts": [
-                "/artifacts/fe212176/superhost_scores_comparison.png",
-                "/artifacts/fd6cdc42/superhost_rating_distribution.png",
-                "/artifacts/bc4a933d/superhost_borough_roomtype.png",
-                "/artifacts/9968fe5b/superhost_deep_dive.png"
+                "/artifacts/16b5070e/borough_share_shift.png",
+                "/artifacts/16b5070e/review_timeline.png"
               ],
               "error": null
             },
             {
               "name": "Presenter",
-              "time_s": 90.7804684638977,
-              "tool_calls": 3,
-              "agent_steps": 3,
-              "input_tokens": 27086,
-              "output_tokens": 5477,
+              "time_s": 31.107012510299683,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 19038,
+              "output_tokens": 3274,
               "artifacts": [
-                "/artifacts/0e6f1a7e/score_comparison_polished.png",
-                "/artifacts/d44aa78b/distribution_and_gaps.png",
-                "/artifacts/451a342b/superhost_value_story.png"
+                "/artifacts/5419b30f/room_type_growth.png",
+                "/artifacts/5419b30f/seasonal_performance.png"
               ],
               "error": null
             }
           ],
-          "error": "EDA Analyst: Max turns (10) exceeded; "
+          "error": null
         },
         {
-          "question_id": 3,
-          "category": "Temporal",
-          "question": "How has host sign-up activity changed over the years?",
-          "status": "timeout",
-          "total_time_s": 420.0,
-          "answer_len": 0,
-          "answer_preview": "",
-          "num_charts": 0,
-          "num_tool_calls": 0,
-          "num_agent_steps": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
-          "estimated_cost_usd": 0.0,
-          "quality_score": -1,
-          "artifacts": [],
-          "stages": [],
-          "error": "Pipeline timed out after 420s"
+          "question_id": 19,
+          "category": "Targeted Text",
+          "question": "What do guests say about cleanliness in Brooklyn reviews?",
+          "status": "success",
+          "total_time_s": 136.1,
+          "answer_len": 4090,
+          "answer_preview": "Brooklyn Airbnb guests are generally highly satisfied with cleanliness, awarding the borough an average score of **4.65/5.0**, though the experience remains a major differentiator between high-performing Superhosts and budget-tier listings.\n\n## Cleanliness is the Single Strongest Predictor of Succes",
+          "num_charts": 4,
+          "num_tool_calls": 13,
+          "num_agent_steps": 8,
+          "input_tokens": 226740,
+          "output_tokens": 9612,
+          "estimated_cost_usd": 0.039778,
+          "quality_score": 82,
+          "artifacts": [
+            "/artifacts/d027c246/brooklyn_cleanliness_correlation.png",
+            "/artifacts/d027c246/brooklyn_room_type_consistency.png",
+            "/artifacts/424fa68e/neighborhood_cleanliness.png",
+            "/artifacts/424fa68e/review_sentiment_themes.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 14.104031801223755,
+              "tool_calls": 3,
+              "agent_steps": 2,
+              "input_tokens": 23370,
+              "output_tokens": 897,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 60.68975567817688,
+              "tool_calls": 7,
+              "agent_steps": 2,
+              "input_tokens": 177790,
+              "output_tokens": 4261,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 27.42801308631897,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 8041,
+              "output_tokens": 1895,
+              "artifacts": [
+                "/artifacts/d027c246/brooklyn_cleanliness_correlation.png",
+                "/artifacts/d027c246/brooklyn_room_type_consistency.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 33.87972545623779,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 17539,
+              "output_tokens": 2559,
+              "artifacts": [
+                "/artifacts/424fa68e/neighborhood_cleanliness.png",
+                "/artifacts/424fa68e/review_sentiment_themes.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
+        },
+        {
+          "question_id": 20,
+          "category": "Host Policy",
+          "question": "How does host acceptance rate vary between room types?",
+          "status": "success",
+          "total_time_s": 102.6,
+          "answer_len": 4087,
+          "answer_preview": "Hotel rooms maintain the highest average acceptance rate at **91.4%**, while standard Airbnb categories like Entire Homes and Private Rooms show significantly lower and remarkably similar rates near **81.3%**.\n\n## Professional Status Outweighs Property Type\nWhile the type of room being booked is a c",
+          "num_charts": 4,
+          "num_tool_calls": 8,
+          "num_agent_steps": 8,
+          "input_tokens": 87351,
+          "output_tokens": 6541,
+          "estimated_cost_usd": 0.017027,
+          "quality_score": 92,
+          "artifacts": [
+            "/artifacts/bd33cade/acceptance_by_borough.csv",
+            "/artifacts/bd33cade/acceptance_by_superhost.csv",
+            "/artifacts/bd33cade/acceptance_stats_by_room_type.csv",
+            "/artifacts/7dd02fe1/acceptance_by_host_size.csv",
+            "/artifacts/7dd02fe1/missing_acceptance_by_room_type.csv",
+            "/artifacts/af880217/acceptance_dist_superhost.png",
+            "/artifacts/af880217/acceptance_heatmap_prof.png",
+            "/artifacts/6a2fad0d/acceptance_portfolio_tier.png",
+            "/artifacts/6a2fad0d/acceptance_superhost_gap.png"
+          ],
+          "stages": [
+            {
+              "name": "Data Collector",
+              "time_s": 6.601017713546753,
+              "tool_calls": 2,
+              "agent_steps": 2,
+              "input_tokens": 4793,
+              "output_tokens": 561,
+              "artifacts": [],
+              "error": null
+            },
+            {
+              "name": "EDA Analyst",
+              "time_s": 38.467024087905884,
+              "tool_calls": 4,
+              "agent_steps": 2,
+              "input_tokens": 64407,
+              "output_tokens": 2378,
+              "artifacts": [
+                "/artifacts/bd33cade/acceptance_by_borough.csv",
+                "/artifacts/bd33cade/acceptance_by_superhost.csv",
+                "/artifacts/bd33cade/acceptance_stats_by_room_type.csv",
+                "/artifacts/7dd02fe1/acceptance_by_host_size.csv",
+                "/artifacts/7dd02fe1/missing_acceptance_by_room_type.csv"
+              ],
+              "error": null
+            },
+            {
+              "name": "Hypothesis Generator",
+              "time_s": 23.71130919456482,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 7485,
+              "output_tokens": 1634,
+              "artifacts": [
+                "/artifacts/af880217/acceptance_dist_superhost.png",
+                "/artifacts/af880217/acceptance_heatmap_prof.png"
+              ],
+              "error": null
+            },
+            {
+              "name": "Presenter",
+              "time_s": 33.84560966491699,
+              "tool_calls": 1,
+              "agent_steps": 2,
+              "input_tokens": 10666,
+              "output_tokens": 1968,
+              "artifacts": [
+                "/artifacts/6a2fad0d/acceptance_portfolio_tier.png",
+                "/artifacts/6a2fad0d/acceptance_superhost_gap.png"
+              ],
+              "error": null
+            }
+          ],
+          "error": null
         }
       ],
       "summary": {
-        "success_rate": 0.3333333333333333,
-        "avg_time_s": 392.7,
-        "avg_score": 78.0,
-        "avg_charts": 7.0,
-        "total_cost_usd": 2.725185,
-        "total_input_tokens": 87959,
-        "total_output_tokens": 18744
+        "success_rate": 1.0,
+        "avg_time_s": 131.5,
+        "avg_score": 87.2,
+        "avg_charts": 4.5,
+        "total_cost_usd": 0.542847,
+        "total_input_tokens": 2824104,
+        "total_output_tokens": 198720
       }
     }
   ]

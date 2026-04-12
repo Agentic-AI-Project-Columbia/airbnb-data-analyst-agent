@@ -1,12 +1,12 @@
 """
-OpenRouter Evaluation Pipeline
+Vertex AI Evaluation Pipeline
 ==============================
-Standalone script to compare OpenRouter-backed models on the Airbnb multi-agent pipeline.
+Standalone script to evaluate Gemini models on the Airbnb multi-agent pipeline.
 
 Usage:
-    python evaluate.py                                    # Run all models, all questions
-    python evaluate.py --models "openai/gpt-5.4-mini"     # Single model smoke test
-    python evaluate.py --questions 1                      # Single question
+    python evaluate.py                                            # Run all models, all questions
+    python evaluate.py --models "google/gemini-3.1-pro-preview"   # Single model smoke test
+    python evaluate.py --questions 1                              # Single question
 """
 
 import os
@@ -21,14 +21,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from openai import AsyncOpenAI
-from agents import (
-    Runner,
-    MultiProvider,
-    RunConfig,
-    set_default_openai_key,
-    set_tracing_disabled,
-)
+from agents import Runner, RunConfig, set_tracing_disabled
 from pipeline import (
     build_analyst_input,
     build_collector_input,
@@ -50,17 +43,17 @@ set_tracing_disabled(True)
 class ModelSpec:
     model_id: str
     display_name: str
-    provider_type: str = "openrouter"
+    provider_type: str = "vertex"
     cost_per_1k_input: float = 0.0   # USD
     cost_per_1k_output: float = 0.0  # USD
 
 
 EVAL_MODELS: list[ModelSpec] = [
-    ModelSpec("openai/gpt-4.1", "GPT-4.1", cost_per_1k_input=0.002, cost_per_1k_output=0.008),
-    ModelSpec("openai/gpt-4.1-nano", "GPT-4.1 Nano", cost_per_1k_input=0.0001, cost_per_1k_output=0.0004),
-    ModelSpec("openai/gpt-5.4-mini", "GPT-5.4 Mini", cost_per_1k_input=0.0005, cost_per_1k_output=0.002),
-    ModelSpec("anthropic/claude-sonnet-4-6", "Claude Sonnet 4.6", cost_per_1k_input=0.003, cost_per_1k_output=0.015),
-    ModelSpec("anthropic/claude-opus-4-6", "Claude Opus 4.6", cost_per_1k_input=0.015, cost_per_1k_output=0.075),
+    ModelSpec("google/gemini-3-flash-preview", "Gemini 3 Flash", cost_per_1k_input=0.00015, cost_per_1k_output=0.0006),
+    ModelSpec("google/gemini-3.1-flash-lite-preview", "Gemini 3.1 Flash Lite", cost_per_1k_input=0.0001, cost_per_1k_output=0.0004),
+    ModelSpec("google/gemini-3.1-pro-preview", "Gemini 3.1 Pro", cost_per_1k_input=0.00125, cost_per_1k_output=0.01),
+    ModelSpec("google/gemini-2.5-pro", "Gemini 2.5 Pro", cost_per_1k_input=0.00125, cost_per_1k_output=0.01),
+    ModelSpec("google/gemini-2.5-flash", "Gemini 2.5 Flash", cost_per_1k_input=0.00015, cost_per_1k_output=0.0006),
 ]
 
 EVAL_QUESTIONS = [
@@ -94,29 +87,12 @@ PIPELINE_TIMEOUT = 420  # seconds total
 # Provider factory
 # ---------------------------------------------------------------------------
 
-def _create_openrouter_run_config() -> RunConfig:
-    """Create a RunConfig for OpenRouter."""
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENROUTER_API_KEY not set")
-
-    os.environ["OPENAI_API_KEY"] = api_key
-    set_default_openai_key(api_key)
-    client = AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
-
-    return RunConfig(
-        model_provider=MultiProvider(
-            openai_client=client,
-            openai_prefix_mode="model_id",
-            unknown_prefix_mode="model_id",
-        )
-    )
-
-
 def create_run_config(spec: ModelSpec) -> RunConfig:
-    if spec.provider_type != "openrouter":
+    if spec.provider_type != "vertex":
         raise ValueError(f"Unknown provider: {spec.provider_type}")
-    return _create_openrouter_run_config()
+    from vertex_provider import create_vertex_run_config
+    run_config, _ = create_vertex_run_config()
+    return run_config
 
 
 # ---------------------------------------------------------------------------

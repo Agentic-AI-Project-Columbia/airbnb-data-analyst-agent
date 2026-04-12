@@ -4,7 +4,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-}
+      - GCP_LOCATION=${GCP_LOCATION:-global}
       - DATA_DIR=/data
       - CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
     volumes:
