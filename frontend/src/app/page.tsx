@@ -59,25 +59,48 @@ function getStatusFromTraceStep(step: TraceStep): {
   return null;
 }
 
-const ALL_QUESTIONS = [
-  "Which neighbourhoods are the most expensive and why?",
-  "Compare Brooklyn and Manhattan listings — pricing, reviews, and host quality",
-  "How does pricing vary by room type across the five boroughs?",
-  "Do superhosts get better review scores than regular hosts?",
-  "What words appear most often in negative reviews?",
-  "What is the price distribution for listings near Times Square?",
-  "Which amenities are most common in top-rated listings?",
-  "What is the relationship between listing price and number of reviews?",
-  "What are the top 10 neighbourhoods with the most listings per host?",
-  "How has host sign-up activity changed over the years?",
-  "What share of listings in each borough have no reviews?",
-  "How do accommodation capacity and bedrooms relate to price?",
-  "Are there pricing differences between verified and unverified hosts?",
-  "What percentage of listings are instantly bookable in each borough?",
-  "Which boroughs have the longest minimum stay requirements?",
-  "What do guests say about cleanliness in Brooklyn reviews?",
-  "Which hosts have the most listings across NYC?",
-  "How does review activity look month by month over time?",
+const QUESTION_GROUPS = [
+  {
+    title: "Pricing & Geography",
+    description: "Explore where prices move and which neighbourhoods stand out.",
+    questions: [
+      "Which neighbourhoods have the highest average prices for entire homes?",
+      "How does price vary by room type across the five boroughs?",
+      "Which Manhattan neighbourhoods stand out on both price and review scores?",
+      "How do accommodates and bedrooms relate to listing price?",
+    ],
+  },
+  {
+    title: "Hosts & Quality",
+    description: "Look at host behavior, listing quality, and operational signals.",
+    questions: [
+      "Do superhosts get better review scores than other hosts?",
+      "Which amenities are most common in top-rated listings?",
+      "How do prices differ between hosts with verified identity and those without?",
+      "What percentage of listings are instantly bookable in each borough?",
+    ],
+  },
+  {
+    title: "Reviews & Sentiment",
+    description: "Use guest feedback to surface patterns in experience and demand.",
+    questions: [
+      "What words appear most often in reviews for low-rated listings?",
+      "What do guests say about cleanliness in Brooklyn reviews?",
+      "How does review activity change month by month?",
+      "Which borough has the highest share of listings with no reviews?",
+    ],
+  },
+  {
+    title: "Supply & Market Structure",
+    description: "Understand inventory, concentration, and how hosts shape the market.",
+    questions: [
+      "Compare Brooklyn and Manhattan on price, reviews, and host quality.",
+      "Which neighbourhoods have the highest host concentration?",
+      "How has host sign-up activity changed over the years?",
+      "Which hosts manage the most listings across NYC?",
+      "Which boroughs have the longest minimum stay requirements?",
+    ],
+  },
 ];
 
 function buildConversationHistory(messages: Message[]) {
@@ -335,23 +358,41 @@ export default function Home() {
 
       <main className="flex-1 overflow-y-auto scrollbar-thin">
         {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center px-6">
-            <div className="w-full max-w-4xl landing-content">
+          <div className="min-h-full px-6 py-8 sm:py-10 lg:py-12">
+            <div className="w-full max-w-4xl mx-auto landing-content">
               <DataOverview schema={schema} />
 
-              <p className="text-xs font-semibold text-[var(--color-gray-warm)] uppercase tracking-wider text-center mb-3">
-                Try asking
+              <p className="text-xs font-semibold text-[var(--color-gray-warm)] uppercase tracking-[0.18em] text-center mb-3 sm:mb-4">
+                Explore By Topic
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {ALL_QUESTIONS.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(q)}
-                    disabled={loading}
-                    className="text-left px-3 py-2 rounded-lg bg-white border border-[var(--color-border)] text-[0.8rem] text-[var(--color-navy)] leading-snug hover:border-[var(--color-coral)] hover:shadow-sm transition-all duration-150 active:scale-[0.98]"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {QUESTION_GROUPS.map((group) => (
+                  <section
+                    key={group.title}
+                    className="rounded-2xl border border-[var(--color-border)] bg-white/95 px-4 py-4 shadow-sm"
                   >
-                    {q}
-                  </button>
+                    <div className="mb-3">
+                      <h3 className="text-sm font-semibold text-[var(--color-navy)]">
+                        {group.title}
+                      </h3>
+                      <p className="mt-1 text-[0.78rem] leading-relaxed text-[var(--color-gray-warm)]">
+                        {group.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      {group.questions.map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => handleSend(q)}
+                          disabled={loading}
+                          className="block w-full text-left px-3.5 py-2.5 rounded-xl bg-[var(--color-surface-alt)] border border-transparent text-[0.84rem] text-[var(--color-navy)] leading-snug hover:border-[var(--color-coral)] hover:bg-white hover:shadow-sm transition-all duration-150 active:scale-[0.98]"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
 

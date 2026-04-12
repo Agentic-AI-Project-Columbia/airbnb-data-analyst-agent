@@ -72,38 +72,40 @@ export default function DataOverview({ schema }: Props) {
   ];
 
   return (
-    <div className="text-center mb-5">
-      <div className="flex items-center justify-center gap-3 mb-2">
-        <div className="w-10 h-10 gradient-coral rounded-xl flex items-center justify-center shadow-md">
+    <div className="text-center mb-6 sm:mb-7">
+      <div className="flex flex-col items-center justify-center gap-3 mb-3 sm:mb-4">
+        <div className="w-11 h-11 gradient-coral rounded-2xl flex items-center justify-center shadow-md shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 3v18h18" />
             <path d="M7 16l4-8 4 4 4-10" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-[var(--color-navy)]">
-          NYC Airbnb Open Data
-          <span className="ml-2 text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--color-teal)]/10 text-[var(--color-teal)] align-middle">
-            2022
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-2xl sm:text-[2rem] font-bold tracking-tight text-[var(--color-navy)] leading-tight">
+            NYC Airbnb Open Data
+          </h2>
+          <span className="text-[0.68rem] font-semibold px-2 py-1 rounded-full bg-[var(--color-teal)]/10 text-[var(--color-teal)] tracking-[0.14em] uppercase">
+            2022 Dataset
           </span>
-        </h2>
+        </div>
       </div>
 
-      <p className="text-[var(--color-gray-warm)] max-w-lg mx-auto text-[0.85rem] leading-relaxed mb-3">
+      <p className="text-[var(--color-gray-warm)] max-w-2xl mx-auto text-[0.92rem] sm:text-[0.98rem] leading-relaxed mb-4 sm:mb-5 px-2">
         Explore pricing, neighbourhood patterns, listing features, and guest review
         sentiment across all five NYC boroughs.
       </p>
 
-      <div className="grid grid-cols-4 gap-2 max-w-xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
         {stats.map((s) => (
           <div
             key={s.label}
-            className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg bg-white border border-[var(--color-border)] shadow-sm"
+            className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl bg-white border border-[var(--color-border)] shadow-sm"
           >
             <div className="text-[var(--color-teal)]">{s.icon}</div>
-            <span className="text-lg font-bold text-[var(--color-navy)] leading-tight">
+            <span className="text-xl sm:text-[1.35rem] font-bold text-[var(--color-navy)] leading-tight">
               {s.value}
             </span>
-            <span className="text-[0.65rem] text-[var(--color-gray-warm)]">
+            <span className="text-[0.72rem] sm:text-[0.76rem] text-[var(--color-gray-warm)]">
               {s.label}
             </span>
           </div>

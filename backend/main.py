@@ -57,6 +57,17 @@ STAGE_TIMEOUT_SECONDS = 180    # 3 minutes per agent stage
 PIPELINE_TIMEOUT_SECONDS = 600  # 10 minutes total
 HEARTBEAT_INTERVAL = 30.0      # WebSocket keepalive interval
 
+OUT_OF_SCOPE_LOCATION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\blos angeles\b", re.IGNORECASE), "Los Angeles"),
+    (re.compile(r"(?<![A-Za-z])LA(?![A-Za-z])"), "Los Angeles"),
+    (re.compile(r"\bsan francisco\b", re.IGNORECASE), "San Francisco"),
+    (re.compile(r"\bchicago\b", re.IGNORECASE), "Chicago"),
+    (re.compile(r"\bmiami\b", re.IGNORECASE), "Miami"),
+    (re.compile(r"\bseattle\b", re.IGNORECASE), "Seattle"),
+    (re.compile(r"\bboston\b", re.IGNORECASE), "Boston"),
+    (re.compile(r"\bwashington dc\b", re.IGNORECASE), "Washington, DC"),
+]
+
 
 async def _heartbeat(websocket: WebSocket) -> None:
     """Send periodic heartbeat messages to keep the WebSocket alive."""
@@ -66,6 +77,18 @@ async def _heartbeat(websocket: WebSocket) -> None:
             await websocket.send_json({"type": "heartbeat", "ts": time.time()})
     except (asyncio.CancelledError, Exception):
         pass
+
+
+def _get_scope_error(question: str) -> str | None:
+    """Reject obvious non-NYC geographic comparisons before running the pipeline."""
+    for pattern, label in OUT_OF_SCOPE_LOCATION_PATTERNS:
+        if pattern.search(question):
+            return (
+                f"This dataset only covers New York City Airbnb listings, so I can't answer "
+                f"questions about {label}. Try comparing Brooklyn with another NYC borough "
+                f"or neighbourhood instead, such as Manhattan, Queens, the Bronx, or Staten Island."
+            )
+    return None
 
 app = FastAPI(title="Airbnb Multi-Agent Analyst")
 
@@ -638,6 +661,31 @@ async def analyze(payload: dict):
     if not question:
         return JSONResponse(status_code=400, content={"error": "No question provided"})
 
+    scope_error = _get_scope_error(question)
+    if scope_error:
+        trace = _finalize_trace(
+            [
+                {
+                    "type": "agent_start",
+                    "agent": "Orchestrator",
+                    "ts": time.time(),
+                },
+                {
+                    "type": "message",
+                    "agent": "Orchestrator",
+                    "content": scope_error,
+                    "ts": time.time(),
+                },
+            ],
+            "Orchestrator",
+            scope_error,
+        )
+        return {
+            "answer": scope_error,
+            "artifacts": [],
+            "trace": trace,
+        }
+
     try:
         trace: list[dict] = []
         result, new_artifacts = await asyncio.wait_for(
@@ -670,6 +718,15 @@ async def websocket_analyze(websocket: WebSocket):
 
             if not question:
                 await websocket.send_json({"type": "error", "content": "No question"})
+                continue
+
+            scope_error = _get_scope_error(question)
+            if scope_error:
+                await websocket.send_json({
+                    "type": "result",
+                    "content": scope_error,
+                    "artifacts": [],
+                })
                 continue
 
             await websocket.send_json({

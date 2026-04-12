@@ -249,7 +249,7 @@ function StageCard({
   group: StageGroup;
   schema: Record<string, TableSchema> | null;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const { stage, steps } = group;
   const duration = group.endTs - group.startTs;
 
