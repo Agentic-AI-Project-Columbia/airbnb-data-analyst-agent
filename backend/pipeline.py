@@ -110,83 +110,64 @@ def create_pipeline_agents(model_id: str) -> dict[str, Agent]:
     presenter_instructions = load_prompt("presenter").replace("{SCHEMA_INFO}", schema_desc)
 
     @function_tool
-    def collector_query_db(sql: str) -> str:
+    def query_database(sql: str) -> str:
         """Execute a SQL query against the NYC Airbnb DuckDB database."""
         return run_sql(sql)
 
     @function_tool
-    def analyst_query_db(sql: str) -> str:
-        """Execute a SQL query against the NYC Airbnb DuckDB database for iterative analysis."""
-        return run_sql(sql)
-
-    @function_tool
-    def analyst_run_code(code: str) -> str:
+    def run_analysis_code(code: str) -> str:
         """Execute Python code for exploratory data analysis."""
         return execute_python(code)
 
     @function_tool
-    def hyp_create_viz(code: str) -> str:
+    def create_visualization(code: str) -> str:
         """Execute Python code to generate data visualizations."""
         return execute_python(code, require_artifacts=True)
-
-    @function_tool
-    def pres_create_viz(code: str) -> str:
-        """Execute Python code to generate presentation-quality visualizations."""
-        return execute_python(code, require_artifacts=True)
-
-    @function_tool
-    def pres_query_db(sql: str) -> str:
-        """Execute a SQL query against the NYC Airbnb DuckDB database."""
-        return run_sql(sql)
-
-    @function_tool
-    def pres_run_code(code: str) -> str:
-        """Execute Python code for data analysis."""
-        return execute_python(code)
 
     collector = Agent(
         name="Data Collector",
         instructions=collector_instructions,
-        tools=[collector_query_db],
+        tools=[query_database],
         model=model_id,
     )
     analyst = Agent(
         name="EDA Analyst",
         instructions=analyst_instructions,
-        tools=[analyst_run_code, analyst_query_db],
+        tools=[run_analysis_code, query_database],
         model=model_id,
     )
     hypothesizer = Agent(
         name="Hypothesis Generator",
         instructions=hypothesizer_instructions,
-        tools=[hyp_create_viz],
+        tools=[create_visualization],
         model=model_id,
     )
 
     presenter_collector = Agent(
-        name="Data Collector",
+        name="Presenter Data Collector",
         instructions=(
             schema_desc + "\n\n"
             "You are assisting the Presenter agent. Run the SQL query needed to get "
-            "the requested data, return the results, then hand off back to the Presenter."
+            "the requested data, return the results, then hand off back to the Presenter.\n"
+            "Do not attempt to generate charts in this sub-agent."
         ),
-        tools=[pres_query_db],
+        tools=[query_database],
         model=model_id,
     )
     presenter_analyst = Agent(
-        name="EDA Analyst",
+        name="Presenter EDA Analyst",
         instructions=(
             "You are assisting the Presenter agent. Run the requested Python analysis, "
             "return the results, then hand off back to the Presenter.\n"
             "DATA_DIR and ARTIFACTS_DIR are pre-set variables available in your code."
         ),
-        tools=[pres_run_code],
+        tools=[run_analysis_code],
         model=model_id,
     )
     presenter = Agent(
         name="Presenter",
         instructions=presenter_instructions,
-        tools=[pres_create_viz],
+        tools=[create_visualization],
         handoffs=[presenter_collector, presenter_analyst],
         model=model_id,
     )

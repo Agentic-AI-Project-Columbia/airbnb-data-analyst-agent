@@ -68,6 +68,14 @@ OUT_OF_SCOPE_LOCATION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bwashington dc\b", re.IGNORECASE), "Washington, DC"),
 ]
 
+OUT_OF_SCOPE_TOPIC_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bweather\b", re.IGNORECASE), "weather"),
+    (re.compile(r"\btemperature\b", re.IGNORECASE), "temperature"),
+    (re.compile(r"\brain\b", re.IGNORECASE), "rain"),
+    (re.compile(r"\bsnow\b", re.IGNORECASE), "snow"),
+    (re.compile(r"\bforecast\b", re.IGNORECASE), "forecast"),
+]
+
 
 async def _heartbeat(websocket: WebSocket) -> None:
     """Send periodic heartbeat messages to keep the WebSocket alive."""
@@ -87,6 +95,17 @@ def _get_scope_error(question: str) -> str | None:
                 f"This dataset only covers New York City Airbnb listings, so I can't answer "
                 f"questions about {label}. Try comparing Brooklyn with another NYC borough "
                 f"or neighbourhood instead, such as Manhattan, Queens, the Bronx, or Staten Island."
+            )
+    return None
+
+
+def _get_topic_scope_error(question: str) -> str | None:
+    """Reject questions unrelated to the NYC Airbnb dataset (no external tools wired)."""
+    for pattern, label in OUT_OF_SCOPE_TOPIC_PATTERNS:
+        if pattern.search(question):
+            return (
+                f"I can't answer {label} questions. This app only analyzes the NYC Airbnb dataset "
+                "(listings, neighbourhoods, reviews) and doesn't call external weather APIs."
             )
     return None
 
@@ -715,6 +734,31 @@ async def analyze(payload: dict):
             "trace": trace,
         }
 
+    topic_error = _get_topic_scope_error(question)
+    if topic_error:
+        trace = _finalize_trace(
+            [
+                {
+                    "type": "agent_start",
+                    "agent": "Orchestrator",
+                    "ts": time.time(),
+                },
+                {
+                    "type": "message",
+                    "agent": "Orchestrator",
+                    "content": topic_error,
+                    "ts": time.time(),
+                },
+            ],
+            "Orchestrator",
+            topic_error,
+        )
+        return {
+            "answer": topic_error,
+            "artifacts": [],
+            "trace": trace,
+        }
+
     try:
         trace: list[dict] = []
         result, new_artifacts = await asyncio.wait_for(
@@ -754,6 +798,15 @@ async def websocket_analyze(websocket: WebSocket):
                 await websocket.send_json({
                     "type": "result",
                     "content": scope_error,
+                    "artifacts": [],
+                })
+                continue
+
+            topic_error = _get_topic_scope_error(question)
+            if topic_error:
+                await websocket.send_json({
+                    "type": "result",
+                    "content": topic_error,
                     "artifacts": [],
                 })
                 continue
