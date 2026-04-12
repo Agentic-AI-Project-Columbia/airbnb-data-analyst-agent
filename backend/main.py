@@ -288,6 +288,13 @@ def _has_visible_trace_steps(trace: list[dict]) -> bool:
     )
 
 
+def _agent_made_tool_call(trace: list[dict], agent_name: str, start_index: int = 0) -> bool:
+    return any(
+        step.get("type") == "tool_call" and step.get("agent") == agent_name
+        for step in trace[start_index:]
+    )
+
+
 def _finalize_trace(trace: list[dict], current_agent: str, final_output: str | None) -> list[dict]:
     if not trace:
         trace.append({
@@ -529,12 +536,34 @@ async def _run_pipeline(
         },
         websocket,
     )
+    analyst_trace_start = len(trace)
     _, analyst_output = await _run_stage_with_timeout(
         analyst_agent,
         build_analyst_input(resolved_request, collector_output),
         trace,
         websocket,
     )
+
+    if not _agent_made_tool_call(trace, "EDA Analyst", analyst_trace_start):
+        await _record_trace_step(
+            trace,
+            {
+                "type": "message",
+                "agent": "Orchestrator",
+                "content": "EDA Analyst returned without using an analysis tool. Retrying with an explicit requirement to compute over the collected data.",
+                "ts": time.time(),
+            },
+            websocket,
+        )
+        _, analyst_output = await _run_stage_with_timeout(
+            analyst_agent,
+            build_analyst_input(resolved_request, collector_output)
+            + "\n\nIMPORTANT: You must make at least one tool call in this stage using the collected data. "
+              "Use run_analysis_code for statistics/computation or query_database for a refined breakdown before responding.",
+            trace,
+            websocket,
+            fallback=analyst_output,
+        )
 
     # Stage 3: Hypothesis Generation
     await _record_trace_step(

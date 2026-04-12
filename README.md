@@ -17,7 +17,7 @@ Five agents, orchestrated by procedural Python (not an LLM router), built on the
 | Stage | Agent | Tools | Job |
 |-------|-------|-------|-----|
 | 1 | Data Collector | `query_database` (DuckDB SQL) | Translate the question into SQL, return structured results |
-| 2 | EDA Analyst | `run_analysis_code` + `query_database` | Compute statistics in Python; query the DB again when gaps appear (iterative refinement) |
+| 2 | EDA Analyst | `run_analysis_code` + `query_database` | Compute statistics in Python; query the DB again when gaps appear (iterative refinement). The backend retries this stage if it returns without at least one analysis tool call. |
 | 3 | Hypothesis Generator | `create_visualization` | Form data-grounded conclusions with supporting charts |
 | 4 | Presenter | `create_visualization` + sub-agent handoffs | Produce a polished briefing with publication-quality charts |
 
