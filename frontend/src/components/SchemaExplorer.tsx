@@ -38,7 +38,7 @@ function TableCard({
   name: string;
   info: TableSchema;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(name === "listings");
   const [showAll, setShowAll] = useState(false);
 
   const colCount = info.columns.length;
@@ -71,6 +71,9 @@ function TableCard({
           </div>
           <p className="text-xs text-[var(--color-gray-warm)] mt-0.5 truncate">
             {info.description}
+          </p>
+          <p className="text-[0.68rem] text-[var(--color-coral)] mt-1 font-medium">
+            {expanded ? "Hide columns" : "Click to view columns"}
           </p>
         </div>
         <svg
@@ -148,6 +151,9 @@ export default function SchemaExplorer({ schema }: Props) {
       <h3 className="text-xs font-semibold text-[var(--color-navy)] mb-2 uppercase tracking-wider">
         Available Tables
       </h3>
+      <p className="text-[0.75rem] text-[var(--color-gray-warm)] mb-3 leading-relaxed">
+        Inspect the live schema for each dataset table. The main listings table opens by default.
+      </p>
       <div className="space-y-1.5">
         {TABLE_ORDER.filter((t) => schema[t]).map((t) => (
           <TableCard key={t} name={t} info={schema[t]} />
