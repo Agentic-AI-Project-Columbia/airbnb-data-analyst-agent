@@ -18,7 +18,9 @@ def load_project_dotenv() -> None:
 
 
 def get_cors_origins() -> list[str]:
-    raw = os.environ.get("CORS_ALLOW_ORIGINS", "")
+    raw = os.environ.get("CORS_ALLOW_ORIGINS", "").strip()
+    if raw == "*":
+        return ["*"]
     origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
     if origins:
         return origins

@@ -34,7 +34,7 @@ steps:
       - '--timeout=600'
       - '--min-instances=0'
       - '--max-instances=3'
-      - '--set-env-vars=DATA_DIR=/data,GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=global'
+      - '--set-env-vars=DATA_DIR=/data,GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=global,CORS_ALLOW_ORIGINS=*'
       - '--session-affinity'
 
   # 5. Capture backend URL for frontend build
@@ -71,13 +71,6 @@ steps:
       - '--timeout=60'
       - '--min-instances=0'
       - '--max-instances=3'
-
-  # 9. Update backend CORS allowlist with the deployed frontend URL
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - 'FRONTEND_URL=$$(gcloud run services describe airbnb-frontend --region=us-east1 --format="value(status.url)") && gcloud run services update airbnb-backend --region=us-east1 --update-env-vars "^|^CORS_ALLOW_ORIGINS=$${FRONTEND_URL},http://localhost:3000,http://127.0.0.1:3000"'
 
 images:
   - 'us-east1-docker.pkg.dev/$PROJECT_ID/airbnb-repo/airbnb-backend:latest'
