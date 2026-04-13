@@ -6,6 +6,8 @@ import type { TableSchema } from "./SqlQueryBlock";
 
 type Props = {
   schema: Record<string, TableSchema> | null;
+  failed?: boolean;
+  onRetry?: () => void;
 };
 
 const TABLE_ORDER = ["listings", "reviews", "neighbourhoods"];
@@ -127,21 +129,37 @@ function TableCard({
   );
 }
 
-export default function SchemaExplorer({ schema }: Props) {
+export default function SchemaExplorer({ schema, failed, onRetry }: Props) {
   if (!schema) {
     return (
       <div>
         <h3 className="text-xs font-semibold text-[var(--color-navy)] mb-2 uppercase tracking-wider">
           Available Tables
         </h3>
-        <div className="space-y-1.5">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-14 rounded-xl bg-white border border-[var(--color-border)] animate-pulse"
-            />
-          ))}
-        </div>
+        {failed ? (
+          <div className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-5 text-center">
+            <p className="text-sm text-[var(--color-gray-warm)] mb-3">
+              Could not load schema — the backend may be starting up.
+            </p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[var(--color-coral)] text-[var(--color-coral)] hover:bg-[var(--color-coral)] hover:text-white transition-colors duration-150"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-14 rounded-xl bg-white border border-[var(--color-border)] animate-pulse"
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }

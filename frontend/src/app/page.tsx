@@ -122,6 +122,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [schema, setSchema] = useState<Record<string, TableSchema> | null>(null);
+  const [schemaFailed, setSchemaFailed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const traceRef = useRef<TraceStep[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
@@ -130,12 +131,29 @@ export default function Home() {
     completed: Set<string>;
   }>({ active: null, completed: new Set() });
 
-  useEffect(() => {
-    fetch(`${BACKEND_URL}/api/schema`)
-      .then((res) => res.json())
-      .then((data) => setSchema(data))
-      .catch(() => {});
+  const fetchSchema = useCallback(async () => {
+    setSchemaFailed(false);
+    let delay = 2000;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/schema`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setSchema(data);
+        return;
+      } catch {
+        if (attempt < 4) {
+          await new Promise((r) => setTimeout(r, delay));
+          delay = Math.min(delay * 2, 16000);
+        }
+      }
+    }
+    setSchemaFailed(true);
   }, []);
+
+  useEffect(() => {
+    fetchSchema();
+  }, [fetchSchema]);
 
   // Auto-scroll only for user messages (so the user sees their own question),
   // not when the assistant response arrives (let them read from the top).
@@ -397,7 +415,7 @@ export default function Home() {
               </div>
 
               <div className="mt-6 max-w-2xl mx-auto">
-                <SchemaExplorer schema={schema} />
+                <SchemaExplorer schema={schema} failed={schemaFailed} onRetry={fetchSchema} />
               </div>
             </div>
           </div>
