@@ -6,7 +6,7 @@
 
 A four-stage agent pipeline (Collect -> Analyze -> Hypothesize -> Present) runs over 37K Airbnb listings, 985K reviews, and 230 neighbourhood mappings from [Inside Airbnb](http://insideairbnb.com/). Each agent writes and executes its own SQL/Python at runtime. The frontend streams every agent action over WebSocket so you can watch the pipeline think. Typical end-to-end latency is 40-60 seconds on Gemini 3.1 Flash Lite via Google Vertex AI.
 
-Arjun Varma & Oranich Jamkachornkiat -- Columbia University, Agentic AI, Spring 2026
+Arjun Varma(av3342) & Oranich Jamkachornkiat(oj2191) -- Columbia University, Agentic AI, Spring 2026
 
 ---
 
