@@ -134,3 +134,19 @@
 - `python -m unittest discover -s tests -p "test_*.py" -v`
 - Runtime import smoke: `main` and `evaluate` both import successfully with a dummy `OPENROUTER_API_KEY`
 - Residual risk: I did not implement the SQL count/concurrency change. That remains a separate tradeoff decision because replacing exact row counts with a cheaper `has_more`-style signal would improve performance but may slightly reduce metadata fidelity in the trace UI and tool outputs.
+
+## 2026-09-15 Gemini model migration
+
+- [x] Audit current model settings and provider lifecycle documentation.
+- [x] Receive implementation and pull-request approval from Arjun.
+- [x] Port the verified personal-repository Gemini 3.5 model and SDK migration without unrelated changes; update executable evaluations and setup docs.
+- [x] Run relevant tests and bounded provider smoke checks.
+- [x] Review the diff and prepare the pull request.
+
+### Review
+
+The shared repository still defaults to a retired Gemini 3.1 Flash-Lite preview. Port the narrowly scoped GA Gemini 3.5 model selection, evaluation catalog, SDK minimum, and thought-signature regression coverage from the personal repository migration. Update setup guidance and label old benchmark measurements as historical.
+
+All 13 backend regression tests passed, including thought-signature round-trip coverage. A live streamed tool call returned the correct structured result. Full pipeline evaluation is recorded below. Lockfile, syntax, and diff checks passed. A complete four-stage analysis succeeded in 37.9s, with 7 tool calls and 3 charts.
+
+The application must be redeployed to use the new default; an existing AGENT_MODEL override takes precedence.

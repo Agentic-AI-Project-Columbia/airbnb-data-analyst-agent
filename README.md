@@ -4,7 +4,7 @@
 
 **Live demo:** [airbnb-frontend-686529012610.us-east1.run.app](https://airbnb-frontend-686529012610.us-east1.run.app) | 
 
-A four-stage agent pipeline (Collect -> Analyze -> Hypothesize -> Present) runs over 37K Airbnb listings, 985K reviews, and 230 neighbourhood mappings from [Inside Airbnb](http://insideairbnb.com/). Each agent writes and executes its own SQL/Python at runtime. The frontend streams every agent action over WebSocket so you can watch the pipeline think. Typical end-to-end latency is 40-60 seconds on Gemini 3.1 Flash Lite via Google Vertex AI.
+A four-stage agent pipeline (Collect -> Analyze -> Hypothesize -> Present) runs over 37K Airbnb listings, 985K reviews, and 230 neighbourhood mappings from [Inside Airbnb](http://insideairbnb.com/). Each agent writes and executes its own SQL/Python at runtime. The frontend streams every agent action over WebSocket so you can watch the pipeline think. The runtime uses GA Gemini 3.5 Flash-Lite via Google Vertex AI; latency depends on the question and generated tool calls.
 
 Arjun Varma(av3342) & Oranich Jamkachornkiat(oj2191) -- Columbia University, Agentic AI, Spring 2026
 
@@ -202,7 +202,7 @@ Data is baked into the backend Docker image at build time -- the running contain
 
 ## Model Configuration
 
-- **Default model:** `google/gemini-3.1-flash-lite-preview` via Google Vertex AI (configurable via `AGENT_MODEL` env var)
+- **Default model:** `google/gemini-3.5-flash-lite` via Google Vertex AI (configurable via `AGENT_MODEL` env var)
 - **Provider:** Google Vertex AI -- uses Application Default Credentials (`gcloud auth application-default login`), requires `GCP_PROJECT_ID` env var
 - **Prompts:** Dedicated markdown files in `backend/prompts/`, with `{SCHEMA_INFO}` placeholders replaced at startup from live DuckDB metadata
 - **Evaluation:** `backend/evaluate.py` benchmarks the pipeline against a 20-question suite across configurable Vertex AI models, scoring on success, charts, depth, efficiency, and speed
@@ -263,10 +263,14 @@ Next.js 16.2.2, React 19.2.4, TypeScript 5, Tailwind CSS 4, react-markdown 10.1.
 
 ## Evaluation
 
-Validated against 20 analytical questions (pricing, hosts, text analysis, geography, amenities, availability, quality, trends) with **100% success rate** and an average quality score of **91/100** on Gemini 3.1 Flash Lite. The evaluation harness (`backend/evaluate.py`) collects per-stage metrics and scores on five dimensions: success, chart quantity, answer depth, tool-call efficiency, and speed.
+Historical validation on Gemini 3.1 Flash-Lite covered 20 analytical questions (pricing, hosts, text analysis, geography, amenities, availability, quality, trends), reporting **100% success rate** and an average quality score of **91/100**. Those measurements predate the Gemini 3.5 migration. The evaluation harness (`backend/evaluate.py`) collects per-stage metrics and scores on five dimensions: success, chart quantity, answer depth, tool-call efficiency, and speed.
 
 ---
 
 Arjun Varma & Oranich Jamkachornkiat | Columbia University -- Agentic AI, Spring 2026
 
 Data source: [Inside Airbnb](http://insideairbnb.com/) (NYC, 2022). Built with the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), [Google Vertex AI](https://cloud.google.com/vertex-ai), [DuckDB](https://duckdb.org/), [FastAPI](https://fastapi.tiangolo.com/), [Next.js](https://nextjs.org/), and [Google Cloud Run](https://cloud.google.com/run).
+
+### Model lifecycle
+
+The default and evaluation catalog use GA Gemini 3.5 models through Vertex AI at `GCP_LOCATION=global`. Set `AGENT_MODEL` to override the default. The backend requires `openai-agents>=0.13.4` so Gemini thought signatures are retained during streamed tool calls. Historical evaluation artifacts retain the model IDs used for those original runs.
